@@ -16,7 +16,7 @@ function generate_login_link() {
 function set_auth_token(token) {
 	config['auth_token'] = token;
 	$.appnet.authorize(token);
-	$.cookie('adn_auth_token', token, { expires: 30 });
+	localStorage['adn_auth_token'] = token;
 }
 
 function have_auth_token() {
@@ -28,9 +28,9 @@ function have_auth_token() {
 			document.location.hash = '';
 			return true;
 		}
-		// Second, check cookie
-		if($.cookie('adn_auth_token')) {
-			set_auth_token($.cookie('adn_auth_token'));
+		// Second, check locale storage
+		if(localStorage['adn_auth_token']) {
+			set_auth_token(localStorage['adn_auth_token']);
 			return true;
 		}
 		// Third, nope!
@@ -41,7 +41,7 @@ function have_auth_token() {
 }
 
 function logout() {
-	$.removeCookie('adn_auth_token');
+	localStorage.removeItem('adn_auth_token');
 	config['auth_token'] = undefined;
 	$('#HaveAuthLoaded').html('').addClass('hide');
 	$('#HaveAuth,#NeedAuth').toggleClass('hide');
