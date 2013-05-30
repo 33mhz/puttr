@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<title>Puttr for App.Net</title>
+</head>
+<body>
+	<div class="container-fluid">
+		<h1 class="text-center">Puttr for App.Net</h1>
+		<div id="NeedAuth" class="hide">
+			<p><strong>Puttr</strong> for <a href="https://app.net/">App.Net</a> allows you to quickly upload a file to your App.Net file storage and get a short URL back.</p>
+			<a class="btn btn-large btn-success btn-block" id="LoginButton"><i class="icon-off icon-white"></i> Log in to AppDotNet</a>
+		</div>
+		<div id="HaveAuth" class="hide">
+			<div id="HaveAuthLoader" class="progress progress-striped active">
+				<div class="bar" style="width: 100%;"></div>
+			</div>
+			<div id="HaveAuthLoaded" class="hide">
+
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="js/jquery-2.0.1.min.js"></script>
+	<script type="text/javascript" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="js/jquery.cookie.js"></script>
+	<script type="text/javascript" src="js/appnet.js"></script>
+	<script type="text/javascript" src="js/config.js"></script>
+</body>
+</html>
