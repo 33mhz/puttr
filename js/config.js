@@ -42,6 +42,7 @@ function have_auth_token() {
 
 function logout() {
 	$.removeCookie('adn_auth_token');
+	config['auth_token'] = undefined;
 	$('#HaveAuthLoaded').html('').addClass('hide');
 	$('#HaveAuth,#NeedAuth').toggleClass('hide');
 	$('#HaveAuthLoader').removeClass('hide');
@@ -63,7 +64,7 @@ function logged_in_setup() {
 			// Logged in as and logout buttons
 			var buttons = $('<div/>').addClass('row-fluid');
 			$('<div/>').addClass('span11 offset1')
-				.text('Logged in as: ')
+				.text('Logged in: ')
 				.append(
 					$('<strong/>').text(data.user.name + ' (@' + data.user.username + ')')
 				).append(
@@ -89,6 +90,40 @@ function logged_in_setup() {
 
 			form.appendTo($('#HaveAuthLoaded'));
 
+			form.fileupload({
+				dataType: 'json',
+				url: 'https://alpha-api.app.net/stream/0/files',
+				done: function (e, data) {
+					var div = $('<div/>').css({maxHeight: '30px', overflow: 'hidden'});
+					$('<input/>').attr('type', 'text')
+						.val(data.result.data.url_short)
+						.click(function() {
+							$(this).focus();
+							$(this).select();
+						}).css({width: '50%', maxWidth: '256px'})
+						.appendTo(div);
+					div.append('&nbsp;' + data.result.data.name);
+
+					data.context.replaceWith(div);
+				},
+				add: function (e, data) {
+					data.context = $('<div class="progress progress-striped active"><div class="bar" style="width: 0%;"></div><span>Uploading...</span></div>').appendTo($('#HaveAuthLoaded'));
+					data.submit();
+				},
+				formData: {
+					access_token: config['auth_token'],
+					type: "us.treeview.file",
+					public: true
+				},
+				progress: function (e, data) {
+					var progress = parseInt(data.loaded / data.total * 100, 10);
+					if(progress > 50) {
+						data.context.find('span').remove();
+						data.context.find('.bar').text('Uploading...');
+					}
+					data.context.find('.bar').css('width', progress + '%');
+				}
+			});
 
 			$('#HaveAuthLoaded, #HaveAuthLoader').toggleClass('hide');
 		}
