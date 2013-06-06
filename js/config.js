@@ -1,3 +1,21 @@
+jQuery.fn.selectText = function(){
+    var doc = document
+        , element = this[0]
+        , range, selection
+    ;
+    if (doc.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(element);
+        range.select();
+    } else if (window.getSelection) {
+        selection = window.getSelection();        
+        range = document.createRange();
+        range.selectNodeContents(element);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+};
+
 var config = {
 	"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
 	"scope": "write_post files",
@@ -47,6 +65,44 @@ function logout() {
 	$('#HaveAuth,#NeedAuth').toggleClass('hide');
 	$('#HaveAuthLoader').removeClass('hide');
 	$('#LoginButton').attr('href', generate_login_link());
+	$('#Username').text('');
+	$('#LoadedFiles').html('');
+}
+
+function add_file(prepend) {
+	var div = $('<div/>').addClass('span4');
+	var progress = $('<div/>').addClass('progress progress-striped active');
+	var bar = $('<div/>').addClass('bar').css('width', '0%');
+	var span = $('<span>').text('Uploading...');
+	progress.append(bar).append(span).appendTo(div);
+	if(prepend) {
+		div.prependTo($('#LoadedFiles'));
+	} else {
+		div.appendTo($('#LoadedFiles'));
+	}
+	return div;
+}
+
+function loaded_file(file, into) {
+	if(!file.url_short) {
+		file.url_short = file.url_permanent || file.url;
+	}
+	var link = $('<code/>').append(
+		$('<a/>').text(file.url_short).attr('href', file.url_short)
+	);
+	var div = $('<div/>').text(file.name)
+					.prepend(' ')
+					.prepend(link)
+					.click(function() {
+						link.selectText();
+					});
+	$('<div/>').addClass('span4').append(div).replaceAll(into);
+}
+
+function uploadButton(e) {
+	e.preventDefault();
+	$('#UploadForm input[type=file]').click();
+	return false;
 }
 
 function logged_in_setup() {
@@ -62,52 +118,19 @@ function logged_in_setup() {
 			config['user_data'] = data;
 
 			// Logged in as and logout buttons
-			var buttons = $('<div/>').addClass('row-fluid');
-			$('<div/>').addClass('span11 offset1')
-				.text('Logged in: ')
-				.append(
-					$('<strong/>').text(data.user.name + ' (@' + data.user.username + ')')
-				).append(
-					$('<button/>').click(logout).addClass('btn pull-right').text('Logout')
-				).appendTo(buttons);
-			buttons.appendTo($('#HaveAuthLoaded'));
+			$('#Username').text(data.user.name + ' (@' + data.user.username + ')');
+			$('#Logout').off('click', logout).on('click', logout);
 
-			$('<div/>').addClass('row-fluid clearfix')
-				.html('<p>&nbsp;</p>')
-				.appendTo($('#HaveAuthLoaded'));
+			$('#UploadButton').off('click', uploadButton).on('click', uploadButton);
 
-			var form = $('<form/>').append($('<fieldset/>')).addClass('hide');
-			$('<input/>').attr('type', 'file')
-				.attr('name', 'content')
-				.appendTo(form.find('fieldset'));
-
-			$('<button/>').text('Upload file')
-				.addClass('btn btn-primary btn-block')
-				.click(function() {
-					form.find('input').click();
-					return false;
-				}).appendTo($('#HaveAuthLoaded')).wrap('<p></p>');
-
-			form.appendTo($('#HaveAuthLoaded'));
-
-			form.fileupload({
+			$('#UploadForm').fileupload({
 				dataType: 'json',
 				url: 'https://alpha-api.app.net/stream/0/files',
 				done: function (e, data) {
-					var div = $('<div/>').css({maxHeight: '30px', overflow: 'hidden'});
-					$('<input/>').attr('type', 'text')
-						.val(data.result.data.url_short)
-						.click(function() {
-							$(this).focus();
-							$(this).select();
-						}).css({width: '50%', maxWidth: '256px'})
-						.appendTo(div);
-					div.append('&nbsp;' + data.result.data.name);
-
-					data.context.replaceWith(div);
+					loaded_file(data.result.data, data.context);
 				},
 				add: function (e, data) {
-					data.context = $('<div class="progress progress-striped active"><div class="bar" style="width: 0%;"></div><span>Uploading...</span></div>').appendTo($('#HaveAuthLoaded'));
+					data.context = add_file(true)
 					data.submit();
 				},
 				formData: {
@@ -125,7 +148,20 @@ function logged_in_setup() {
 				}
 			});
 
-			$('#HaveAuthLoaded, #HaveAuthLoader').toggleClass('hide');
+			$('#HaveAuthLoaded').toggleClass('hide');
+
+			$.appnet.file.getUserFiles({
+				file_types: 'us.treeview.file',
+				count: 30
+			}).done(function(data) {
+				if(data.data.length > 0) {
+					for(var i = 0; i < data.data.length; ++i) {
+						loaded_file(data.data[i], add_file());
+					}
+				}
+
+				$('#HaveAuthLoader').toggleClass('hide');
+			});
 		}
 	}).fail(function() {
 		console.log(arguments);
