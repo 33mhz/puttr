@@ -153,7 +153,8 @@ function logged_in_setup() {
 				$('#LoadMore').addClass('hide');
 				$('#HaveAuthLoader').removeClass('hide');
 				var postData = {
-					file_types: 'us.treeview.file',
+					'include_private': 0,
+					'include_incomplete': 0,
 					count: 24
 				};
 				if($('#LoadMore').data('min_id')) {
