@@ -134,7 +134,7 @@ function logged_in_setup() {
 				},
 				formData: {
 					access_token: config['auth_token'],
-					type: "us.treeview.file",
+					type: "us.treeview.puttr",
 					public: true
 				},
 				progress: function (e, data) {
