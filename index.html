@@ -5,20 +5,21 @@
 	<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 	<title>Puttr for App.Net</title>
 	<style type="text/css">
-		#LoadedFiles div.span4 {
+		#LoadedFiles div.span2 {
 			overflow: hidden;
 			max-height: 25px;
 			min-height: 25px;
 			margin-left: 1%;
 			margin-bottom: 3px;
+			width: 15.7%;
 		}
 
-		#LoadedFiles div.span4 > div {
+		#LoadedFiles div.span2 > div {
 			height: 25px;
 			width: 10000px;
 		}
 
-		#LoadedFiles div.span4 code {
+		#LoadedFiles div.span2 code {
 			width: 210px;
 			overflow: hidden;
 			display: inline-block;
@@ -26,8 +27,14 @@
 		}
 
 		@media(max-width:767px){
-			#LoadedFiles div.span4 {
+			#LoadedFiles div.span2 {
 				margin-left: 0;
+				width: 50%;
+				float: left;
+			}
+
+			#LoadedFiles div.span2 > div {
+				margin-left: 5px;
 			}
 		}
 	</style>
@@ -62,6 +69,14 @@
 			</div>
 			<div id="HaveAuthLoader" class="progress progress-striped active">
 				<div class="bar" style="width: 100%;">Loading...</div>
+			</div>
+			<div id="LoadMore" class="hide">
+				<div class="row-fluid clearfix"><p>&nbsp;</p></div>
+				<div class="row-fluid">
+					<div class="span10 offset1">
+						<a class="btn btn-inverse btn-large btn-block"><i class="icon-repeat icon-white"></i> Load previous uploads</a>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

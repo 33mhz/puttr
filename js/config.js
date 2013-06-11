@@ -91,12 +91,11 @@ function loaded_file(file, into) {
 		$('<a/>').text(file.url_short).attr('href', file.url_short)
 	);
 	var div = $('<div/>').text(file.name)
-					.prepend(' ')
-					.prepend(link)
 					.click(function() {
 						link.selectText();
 					});
-	$('<div/>').addClass('span4').append(div).replaceAll(into);
+	var divOuter = $('<div/>').addClass('span2').append(div)
+	$('<div/>').addClass('span2').append(link).replaceAll(into).after(divOuter);
 }
 
 function uploadButton(e) {
@@ -150,18 +149,34 @@ function logged_in_setup() {
 
 			$('#HaveAuthLoaded').toggleClass('hide');
 
-			$.appnet.file.getUserFiles({
-				file_types: 'us.treeview.file',
-				count: 30
-			}).done(function(data) {
-				if(data.data.length > 0) {
-					for(var i = 0; i < data.data.length; ++i) {
-						loaded_file(data.data[i], add_file());
-					}
+			$('#LoadMore a').click(function(e) {
+				$('#LoadMore').addClass('hide');
+				$('#HaveAuthLoader').removeClass('hide');
+				var postData = {
+					file_types: 'us.treeview.file',
+					count: 24
+				};
+				if($('#LoadMore').data('min_id')) {
+					postData['before_id'] = $('#LoadMore').data('min_id');
 				}
+				$.appnet.file.getUserFiles(postData).done(function(data) {
+					if(data.data.length > 0) {
+						for(var i = 0; i < data.data.length; ++i) {
+							loaded_file(data.data[i], add_file());
+						}
+					}
 
-				$('#HaveAuthLoader').toggleClass('hide');
-			});
+					if(data.meta.more) {
+						$('#LoadMore').data('min_id', data.meta.min_id).removeClass('hide');
+					} else {
+						$('#LoadMore').addClass('hide').data('min_id', null);
+					}
+
+					$('#HaveAuthLoader').addClass('hide');
+				});
+
+				return false;
+			}).click();
 		}
 	}).fail(function() {
 		console.log(arguments);
