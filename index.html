@@ -11,7 +11,7 @@
 			min-height: 25px;
 			margin-left: 1%;
 			margin-bottom: 3px;
-			width: 32.4%;
+			width: 32.3%;
 		}
 
 		#LoadedFiles div.span2 {
@@ -33,6 +33,17 @@
 			overflow: hidden;
 			display: inline-block;
 			height: 19px;
+		}
+
+		.dragdropzone {
+			background: #EDEDED;
+			text-align: center;
+			padding: 15px;
+			border: 3px dashed #666;
+			border-radius: 10px;
+			margin-top: 5px;
+			font-weight: bold;
+			font-size: 15px;
 		}
 
 		@media(max-width:767px){
@@ -64,9 +75,10 @@
 				<div class="row-fluid">
 					<div class="span10 offset1">
 						<button class="btn btn-primary btn-block" id="UploadButton"><i class="icon-upload icon-white"></i> Upload file</button>
+						<div class="dragdropzone visible-desktop">Or drop files here to upload them</div>
 						<form class="hide" id="UploadForm">
 							<fieldset>
-								<input type="file" name="content">
+								<input type="file" name="content[]" multiple>
 							</fieldset>
 						</form>
 					</div>

@@ -144,7 +144,9 @@ function logged_in_setup() {
 						data.context.find('.bar').text('Uploading...');
 					}
 					data.context.find('.bar').css('width', progress + '%');
-				}
+				},
+				dropZone: $('.dragdropzone'),
+				paramName: 'content',
 			});
 
 			$('#HaveAuthLoaded').toggleClass('hide');
