@@ -19,7 +19,7 @@ jQuery.fn.selectText = function(){
 var config = {
 	"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
 	"scope": "write_post files",
-	"redirect_uri": document.location.origin + document.location.pathname,
+	"redirect_uri": window.location.protocol + '//' + window.location.host + window.location.pathname,
 	"response_type": "token"
 };
 
