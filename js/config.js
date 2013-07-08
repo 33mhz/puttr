@@ -83,17 +83,60 @@ function add_file(prepend) {
 	return div;
 }
 
+function postFile(e) {
+	var file = $(this).data('file');
+	if(file.kind === "image") {
+		handlePostImage(file);
+	} else {
+		handlePostFile(file);
+	}
+	$('#PostModal').modal('show');
+}
+
+function handlePostFile(file) {
+	var name = file.name;
+	var pos = name.lastIndexOf('.');
+	if(pos) {
+		name = name.substring(0, pos);
+	}
+	$('#PostModal h3 span').text(name);
+	$('#PostModal textarea').data('annotations', []).val('[' + name + '](' + file.url_short + ')').keyup();
+}
+
+function handlePostImage(file) {
+	file = jQuery.extend(true, {}, file);
+	var name = file.name;
+	var pos = name.lastIndexOf('.');
+	if(pos) {
+		var ext = name.substring(pos);
+		file.url_short += ext;
+	}
+	handlePostFile(file);
+	var annotations = [{
+		"type": "net.app.core.oembed",
+		"value": {
+			"+net.app.core.file": {
+				"format": "oembed",
+				"file_token": file.file_token,
+				"file_id": file.id
+			}
+		}
+	}];
+	$('#PostModal textarea').data('annotations', annotations);
+}
+
 function loaded_file(file, into) {
 	if(!file.url_short) {
 		file.url_short = file.url_permanent || file.url;
 	}
-	var link = $('<code/>').append(
-		$('<a/>').text(file.url_short).attr('href', file.url_short)
-	);
-	var div = $('<div/>').text(file.name)
-					.click(function() {
-						link.selectText();
-					});
+	var link = $('<a/>').text(file.name).attr('href', file.url_short);
+	var buttons = [
+		$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile)
+	];
+	var div = $('<div/>');
+	for(var i in buttons) {
+		div.append(buttons[i]);
+	}
 	var divOuter = $('<div/>').addClass('span2').append(div)
 	$('<div/>').addClass('span2').append(link).replaceAll(into).after(divOuter);
 }
@@ -102,6 +145,37 @@ function uploadButton(e) {
 	e.preventDefault();
 	$('#UploadForm input[type=file]').click();
 	return false;
+}
+
+var md_regex = /\[([^\[\]]+?)\]\(([^)]+?)\)/g;
+
+function build_post(text, annotations) {
+	var post = {
+		annotations: annotations
+	};
+	
+	var match, left, right, links = [], link;
+	while((match = md_regex.exec(text))) {
+		// full thing, text, url
+		left = text.substring(0, match.index);
+		right = text.substring(match.index + match[0].length);
+
+		text = left + match[1] + right;
+
+		link = {
+			pos: match.index,
+			len: match[1].length,
+			url: match[2]
+		};
+
+		links.push(link);
+
+		md_regex.lastIndex = match.index;
+	}
+
+	post.text = text;
+	post.entities = { links: links };
+	return post;
 }
 
 function logged_in_setup() {
@@ -149,6 +223,41 @@ function logged_in_setup() {
 				paramName: 'content',
 			});
 
+			var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
+
+			$('#PostModal textarea').keyup(function() {
+				var text = $(this).val();
+				text = text.replace(md_regex, '$1');
+				var len = text.length;
+				lenP.text(256 - len).removeClass('text-warning text-error text-success');
+				submitButton.removeAttr('disabled');
+				if(len > 256) {
+					lenP.addClass('text-error');
+					submitButton.attr('disabled', 'disabled');
+				} else if(len === 256) {
+					lenP.addClass('text-success');
+				} else if(len > 236) {
+					lenP.addClass('text-warning');
+				}
+			});
+
+			submitButton.click(function() {
+				submitButton.text('Posting...').attr('disabled', 'disabled');
+				var post = build_post($('#PostModal textarea').val(), $('#PostModal textarea').data('annotations'));
+				$.appnet.post.create(post).done(function() {
+					$('#PostModal').modal('hide');
+					var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Posted!');
+					div.alert();
+					$('#LoadedFiles').before(div);
+					setTimeout(function() { div.alert('close'); }, 1500);
+					submitButton.text('Post').removeAttr('disabled');
+				}).fail(function() {
+					console.log(arguments);
+					alert('Unable to post! Please logout and try again.');
+					$('#PostModal').modal('hide');
+				})
+			})
+
 			$('#HaveAuthLoaded').toggleClass('hide');
 
 			$('#LoadMore a').click(function(e) {
@@ -162,7 +271,7 @@ function logged_in_setup() {
 				if($('#LoadMore').data('min_id')) {
 					postData['before_id'] = $('#LoadMore').data('min_id');
 				}
-				$.appnet.file.getUserFiles(postData).done(function(data) {
+				$.appnet.file.getUser(postData).done(function(data) {
 					if(data.data.length > 0) {
 						for(var i = 0; i < data.data.length; ++i) {
 							loaded_file(data.data[i], add_file());
