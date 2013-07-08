@@ -174,7 +174,7 @@ function build_post(text, annotations) {
 	}
 
 	post.text = text;
-	post.entities = { links: links };
+	post.entities = { links: links, parse_links: true };
 	return post;
 }
 
