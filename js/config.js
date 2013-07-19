@@ -246,6 +246,10 @@ function logged_in_setup() {
 				paramName: 'content',
 			});
 
+			if(typeof window.ondrop === 'undefined') {
+				$('.dragdropzone').remove();
+			}
+
 			var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
 
 			$('#PostModal textarea').keyup(function() {
