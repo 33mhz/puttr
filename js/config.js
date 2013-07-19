@@ -93,6 +93,27 @@ function postFile(e) {
 	$('#PostModal').modal('show');
 }
 
+function deleteFile(e) {
+	if(!confirm('Are you sure you want to delete this file?\n\nThis cannot be undone.')) {
+		return;
+	}
+	$t = $(this);
+	$t.text('Deleting...').off('click');
+	var file = $(this).data('file');
+	$.appnet.file.destroy(file.id).done(function() {
+		$t.closest('.span2').prev().remove();
+		$t.closest('.span2').remove();
+		var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Deleted!');
+		div.alert();
+		$('#LoadedFiles').before(div);
+		setTimeout(function() { div.alert('close'); }, 1500);
+	}).fail(function() {
+		console.log(arguments);
+		alert('Unable to delete that file! Please logout and try again.');
+	});
+	return false;
+}
+
 function handlePostFile(file) {
 	var name = file.name;
 	var pos = name.lastIndexOf('.');
@@ -131,14 +152,16 @@ function loaded_file(file, into) {
 	}
 	var link = $('<a/>').text(file.name).attr('href', file.url_short);
 	var buttons = [
-		$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile)
+		$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile),
+		' ',
+		$('<a/>').addClass('btn btn-small btn-danger').text('Delete').data('file', file).click(deleteFile)
 	];
 	var div = $('<div/>');
 	for(var i in buttons) {
 		div.append(buttons[i]);
 	}
 	var divOuter = $('<div/>').addClass('span2').append(div)
-	$('<div/>').addClass('span2').append(link).replaceAll(into).after(divOuter);
+	$('<div/>').addClass('span2 link').append(link).replaceAll(into).after(divOuter);
 }
 
 function uploadButton(e) {
@@ -255,8 +278,8 @@ function logged_in_setup() {
 					console.log(arguments);
 					alert('Unable to post! Please logout and try again.');
 					$('#PostModal').modal('hide');
-				})
-			})
+				});
+			});
 
 			$('#HaveAuthLoaded').toggleClass('hide');
 
