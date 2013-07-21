@@ -1,20 +1,53 @@
-jQuery.fn.selectText = function(){
-    var doc = document
-        , element = this[0]
-        , range, selection
-    ;
-    if (doc.body.createTextRange) {
-        range = document.body.createTextRange();
-        range.moveToElementText(element);
-        range.select();
-    } else if (window.getSelection) {
-        selection = window.getSelection();        
-        range = document.createRange();
-        range.selectNodeContents(element);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-};
+// Closure
+(function(){
+
+	/**
+	 * Decimal adjustment of a number.
+	 *
+	 * @param	{String}	type	The type of adjustment.
+	 * @param	{Number}	value	The number.
+	 * @param	{Integer}	exp		The exponent (the 10 logarithm of the adjustment base).
+	 * @returns	{Number}			The adjusted value.
+	 */
+	function decimalAdjust(type, value, exp) {
+		// If the exp is undefined or zero...
+		if (typeof exp === 'undefined' || +exp === 0) {
+			return Math[type](value);
+		}
+		value = +value;
+		exp = +exp;
+		// If the value is not a number or the exp is not an integer...
+		if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
+			return NaN;
+		}
+		// Shift
+		value = value.toString().split('e');
+		value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] + exp) : +exp)));
+		// Shift back
+		value = value.toString().split('e');
+		return +(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp));
+	}
+
+	// Decimal round
+	if (!Math.round10) {
+		Math.round10 = function(value, exp) {
+			return decimalAdjust('round', value, exp);
+		};
+	}
+	// Decimal floor
+	if (!Math.floor10) {
+		Math.floor10 = function(value, exp) {
+			return decimalAdjust('floor', value, exp);
+		};
+	}
+	// Decimal ceil
+	if (!Math.ceil10) {
+		Math.ceil10 = function(value, exp) {
+			return decimalAdjust('ceil', value, exp);
+		};
+	}
+
+})();
 
 var config = {
 	"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
@@ -107,6 +140,7 @@ function deleteFile(e) {
 		div.alert();
 		$('#LoadedFiles').before(div);
 		setTimeout(function() { div.alert('close'); }, 1500);
+		updateUser();
 	}).fail(function() {
 		console.log(arguments);
 		alert('Unable to delete that file! Please logout and try again.');
@@ -201,126 +235,189 @@ function build_post(text, annotations) {
 	return post;
 }
 
-function logged_in_setup() {
+function niceSize(bytes) {
+	var nice = '', addBytes = false;
+	size = bytes;
+
+	if(size < 1024) {
+		// no-op
+	} else {
+		addBytes = true;
+		size /= 1024;
+		if(size < 1024) {
+			// KiB
+			nice += Math.round10(size, 2) + ' KiB';
+		} else {
+			size /= 1024;
+			if(size < 1024) {
+				// MiB
+				nice += Math.round10(size, 2) + ' MiB';
+			} else {
+				// GiB
+				size /= 1024;
+				nice += Math.round10(size, 2) + ' GiB';
+			}
+		}
+	}
+
+	if(addBytes) {
+		nice += ' (' + bytes + ' bytes)';
+	}
+	return nice;
+}
+
+function updateUser(callback) {
 	$.appnet.token.get().done(function(data) {
 		if(data.meta.code !== 200) {
-			alert("Unable to login!");
+			alert("Error talking to App.net!");
 			logout();
+			console.log(data);
 		} else {
 			data = data.data;
-			// We want limits!
-			config['max_size'] = Math.min(data.limits.max_file_size, data.storage.available - data.storage.used);
 			// Store token info for later (wink wink)
-			config['user_data'] = data;
-
-			// Logged in as and logout buttons
-			$('#Username').text(data.user.name + ' (@' + data.user.username + ')');
-			$('#Logout').off('click', logout).on('click', logout);
-
-			$('#UploadButton').off('click', uploadButton).on('click', uploadButton);
-
-			$('#UploadForm').fileupload({
-				dataType: 'json',
-				url: 'https://alpha-api.app.net/stream/0/files',
-				done: function (e, data) {
-					loaded_file(data.result.data, data.context);
-				},
-				add: function (e, data) {
-					data.context = add_file(true)
-					data.submit();
-				},
-				formData: {
-					access_token: config['auth_token'],
-					type: "us.treeview.puttr",
-					public: true
-				},
-				progress: function (e, data) {
-					var progress = parseInt(data.loaded / data.total * 100, 10);
-					if(progress > 50) {
-						data.context.find('span').remove();
-						data.context.find('.bar').text('Uploading...');
-					}
-					data.context.find('.bar').css('width', progress + '%');
-				},
-				dropZone: $('.dragdropzone'),
-				paramName: 'content',
-			});
-
-			if(typeof window.ondrop === 'undefined') {
-				$('.dragdropzone').remove();
+			config['data'] = data;
+			setupUser();
+			if(callback && typeof callback === 'function') {
+				callback.call(this, data);
 			}
-
-			var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
-
-			$('#PostModal textarea').keyup(function() {
-				var text = $(this).val();
-				text = text.replace(md_regex, '$1');
-				var len = text.length;
-				lenP.text(256 - len).removeClass('text-warning text-error text-success');
-				submitButton.removeAttr('disabled');
-				if(len > 256) {
-					lenP.addClass('text-error');
-					submitButton.attr('disabled', 'disabled');
-				} else if(len === 256) {
-					lenP.addClass('text-success');
-				} else if(len > 236) {
-					lenP.addClass('text-warning');
-				}
-			});
-
-			submitButton.click(function() {
-				submitButton.text('Posting...').attr('disabled', 'disabled');
-				var post = build_post($('#PostModal textarea').val(), $('#PostModal textarea').data('annotations'));
-				$.appnet.post.create(post).done(function() {
-					$('#PostModal').modal('hide');
-					var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Posted!');
-					div.alert();
-					$('#LoadedFiles').before(div);
-					setTimeout(function() { div.alert('close'); }, 1500);
-					submitButton.text('Post').removeAttr('disabled');
-				}).fail(function() {
-					console.log(arguments);
-					alert('Unable to post! Please logout and try again.');
-					$('#PostModal').modal('hide');
-				});
-			});
-
-			$('#HaveAuthLoaded').toggleClass('hide');
-
-			$('#LoadMore a').click(function(e) {
-				$('#LoadMore').addClass('hide');
-				$('#HaveAuthLoader').removeClass('hide');
-				var postData = {
-					'include_private': 0,
-					'include_incomplete': 0,
-					count: 24
-				};
-				if($('#LoadMore').data('min_id')) {
-					postData['before_id'] = $('#LoadMore').data('min_id');
-				}
-				$.appnet.file.getUser(postData).done(function(data) {
-					if(data.data.length > 0) {
-						for(var i = 0; i < data.data.length; ++i) {
-							loaded_file(data.data[i], add_file());
-						}
-					}
-
-					if(data.meta.more) {
-						$('#LoadMore').data('min_id', data.meta.min_id).removeClass('hide');
-					} else {
-						$('#LoadMore').addClass('hide').data('min_id', null);
-					}
-
-					$('#HaveAuthLoader').addClass('hide');
-				});
-
-				return false;
-			}).click();
 		}
 	}).fail(function() {
-		console.log(arguments);
-		alert("Unable to login!");
+		alert("Error talking to App.net!");
 		logout();
+		console.log(arguments);
+	});
+}
+
+function setupUser() {
+	$('#Username').text(config.data.user.name + ' (@' + config.data.user.username + ')');
+	$('#AvailableSpace').text(niceSize(config.data.storage.available));
+	$('#MaxFileSize').text(niceSize(config.data.limits.max_file_size));
+	config['max_size'] = Math.min(config.data.limits.max_file_size, config.data.storage.available);
+}
+
+function setupButtons() {
+	$('#Logout').off('click', logout).on('click', logout);
+	$('#UploadButton').off('click', uploadButton).on('click', uploadButton);
+	$('#LoadMore a').off('click', loadMore).on('click', loadMore);
+}
+
+function setupUploadForm() {
+	$('#UploadForm').fileupload({
+		dataType: 'json',
+		url: 'https://alpha-api.app.net/stream/0/files',
+		formData: {
+			access_token: config.auth_token,
+			type: "us.treeview.puttr",
+			public: true
+		},
+		dropZone: $('.dragdropzone'),
+		paramName: 'content',
+		autoUpload: true
+	}).bind('fileuploadadd', function (e, data) {
+		var file = data.files[0];
+		if(file.size > config.max_size) {
+			var div = $('<div/>').addClass('alert fade in alert-error text-center').text('That file is too big');
+			div.alert();
+			$('#LoadedFiles').before(div);
+			setTimeout(function() { div.alert('close'); }, 1500);
+			data.abort();
+		} else {
+			data.context = add_file(true)
+		}
+	}).bind('fileuploaddone', function (e, data) {
+		loaded_file(data.result.data, data.context);
+	}).bind('fileuploadprogress', function (e, data) {
+		var progress = parseInt(data.loaded / data.total * 100, 10);
+		if(progress > 50) {
+			data.context.find('span').remove();
+			data.context.find('.bar').text('Uploading...');
+		}
+		data.context.find('.bar').css('width', progress + '%');
+	});
+
+	if(typeof window.ondrop === 'undefined') {
+		$('.dragdropzone').remove();
+	}
+}
+
+function setupModal() {
+	var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
+
+	$('#PostModal textarea').keyup(function() {
+		var text = $(this).val();
+		text = text.replace(md_regex, '$1');
+		var len = text.length;
+		lenP.text(256 - len).removeClass('text-warning text-error text-success');
+		submitButton.removeAttr('disabled');
+		if(len > 256) {
+			lenP.addClass('text-error');
+			submitButton.attr('disabled', 'disabled');
+		} else if(len === 256) {
+			lenP.addClass('text-success');
+		} else if(len > 236) {
+			lenP.addClass('text-warning');
+		}
+	});
+
+	submitButton.click(function() {
+		submitButton.text('Posting...').attr('disabled', 'disabled');
+		var post = build_post($('#PostModal textarea').val(), $('#PostModal textarea').data('annotations'));
+		$.appnet.post.create(post).done(function() {
+			$('#PostModal').modal('hide');
+			var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Posted!');
+			div.alert();
+			$('#LoadedFiles').before(div);
+			setTimeout(function() { div.alert('close'); }, 1500);
+			submitButton.text('Post').removeAttr('disabled');
+			updateUser();
+		}).fail(function() {
+			console.log(arguments);
+			alert('Unable to post! Please logout and try again.');
+			$('#PostModal').modal('hide');
+		});
+	});
+}
+
+function loadMore() {
+	$('#LoadMore').addClass('hide');
+	$('#HaveAuthLoader').removeClass('hide');
+	var postData = {
+		'include_private': 0,
+		'include_incomplete': 0,
+		count: 24
+	};
+	if($('#LoadMore').data('min_id')) {
+		postData['before_id'] = $('#LoadMore').data('min_id');
+	}
+	$.appnet.file.getUser(postData).done(function(data) {
+		if(data.data.length > 0) {
+			for(var i = 0; i < data.data.length; ++i) {
+				loaded_file(data.data[i], add_file());
+			}
+		}
+
+		if(data.meta.more) {
+			$('#LoadMore').data('min_id', data.meta.min_id).removeClass('hide');
+		} else {
+			$('#LoadMore').addClass('hide').data('min_id', null);
+		}
+
+		$('#HaveAuthLoader').addClass('hide');
+	});
+
+	return false;
+}
+
+function logged_in_setup() {
+	updateUser(function(data) {
+		// Rebind everything
+		setupButtons();
+		setupUploadForm();
+		setupModal();
+
+		$('#HaveAuthLoaded').removeClass('hide');
+
+		$('#LoadMore a').click();
 	});
 }
 
