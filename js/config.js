@@ -136,10 +136,7 @@ function deleteFile(e) {
 	$.appnet.file.destroy(file.id).done(function() {
 		$t.closest('.span2').prev().remove();
 		$t.closest('.span2').remove();
-		var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Deleted!');
-		div.alert();
-		$('#LoadedFiles').before(div);
-		setTimeout(function() { div.alert('close'); }, 1500);
+		showAlert('Deleted!');
 		updateUser();
 	}).fail(function() {
 		console.log(arguments);
@@ -291,14 +288,40 @@ function updateUser(callback) {
 function setupUser() {
 	$('#Username').text(config.data.user.name + ' (@' + config.data.user.username + ')');
 	$('#AvailableSpace').text(niceSize(config.data.storage.available));
-	$('#MaxFileSize').text(niceSize(config.data.limits.max_file_size));
 	config['max_size'] = Math.min(config.data.limits.max_file_size, config.data.storage.available);
+	$('#MaxFileSize').text(niceSize(config.max_size));
 }
 
 function setupButtons() {
 	$('#Logout').off('click', logout).on('click', logout);
 	$('#UploadButton').off('click', uploadButton).on('click', uploadButton);
 	$('#LoadMore a').off('click', loadMore).on('click', loadMore);
+}
+
+function showAlert(text, c, expire, before) {
+	if(!text) {
+		return;
+	}
+	if(typeof c === 'undefined') {
+		c = 'success';
+	}
+	if(typeof expire === 'undefined') {
+		expire = 1500;
+	}
+	if(!before) {
+		before = '#LoadedFiles';
+	}
+
+	var div = $('<div/>').addClass('alert fade in text-center').addClass('alert-' + c);
+	div.text(text);
+	div.prepend('<button type="button" class="close" data-dismiss="alert">&times;</button>');
+	div.alert();
+	$(before).before(div);
+	if(expire) {
+		setTimeout(function() {
+			div.alert('close');
+		}, expire);
+	}
 }
 
 function setupUploadForm() {
@@ -312,27 +335,43 @@ function setupUploadForm() {
 		},
 		dropZone: $('.dragdropzone'),
 		paramName: 'content',
-		autoUpload: true
+		autoUpload: true,
+		limitConcurrentUploads: 5
 	}).bind('fileuploadadd', function (e, data) {
 		var file = data.files[0];
 		if(file.size > config.max_size) {
-			var div = $('<div/>').addClass('alert fade in alert-error text-center').text('That file is too big');
-			div.alert();
-			$('#LoadedFiles').before(div);
-			setTimeout(function() { div.alert('close'); }, 1500);
-			data.abort();
+			showAlert('That file is too big', 'error');
+			return false;
 		} else {
 			data.context = add_file(true)
 		}
+	}).bind('fileuploadsend', function(e, data) {
+		if(!data.context) {
+			return false;
+		}
 	}).bind('fileuploaddone', function (e, data) {
 		loaded_file(data.result.data, data.context);
+		updateUser();
 	}).bind('fileuploadprogress', function (e, data) {
+		if(!data.context) {
+			return;
+		}
 		var progress = parseInt(data.loaded / data.total * 100, 10);
 		if(progress > 50) {
 			data.context.find('span').remove();
 			data.context.find('.bar').text('Uploading...');
 		}
 		data.context.find('.bar').css('width', progress + '%');
+	}).bind('fileuploadfail', function(e, data) {
+		var res = data.jqXHR.responseJSON;
+		var message = res.meta.error_message;
+		showAlert(message, 'error', false);
+		
+		data.context.addClass('text-error text-center').text('Error!');
+		setTimeout(function() { data.context.remove(); }, 3000);
+		
+		updateUser();
+		console.log(res);
 	});
 
 	if(typeof window.ondrop === 'undefined') {
@@ -364,12 +403,8 @@ function setupModal() {
 		var post = build_post($('#PostModal textarea').val(), $('#PostModal textarea').data('annotations'));
 		$.appnet.post.create(post).done(function() {
 			$('#PostModal').modal('hide');
-			var div = $('<div/>').addClass('alert fade in alert-success text-center').text('Posted!');
-			div.alert();
-			$('#LoadedFiles').before(div);
-			setTimeout(function() { div.alert('close'); }, 1500);
+			showAlert('Posted!');
 			submitButton.text('Post').removeAttr('disabled');
-			updateUser();
 		}).fail(function() {
 			console.log(arguments);
 			alert('Unable to post! Please logout and try again.');
