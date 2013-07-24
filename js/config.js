@@ -1,54 +1,3 @@
-// Closure
-(function(){
-
-	/**
-	 * Decimal adjustment of a number.
-	 *
-	 * @param	{String}	type	The type of adjustment.
-	 * @param	{Number}	value	The number.
-	 * @param	{Integer}	exp		The exponent (the 10 logarithm of the adjustment base).
-	 * @returns	{Number}			The adjusted value.
-	 */
-	function decimalAdjust(type, value, exp) {
-		// If the exp is undefined or zero...
-		if (typeof exp === 'undefined' || +exp === 0) {
-			return Math[type](value);
-		}
-		value = +value;
-		exp = +exp;
-		// If the value is not a number or the exp is not an integer...
-		if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
-			return NaN;
-		}
-		// Shift
-		value = value.toString().split('e');
-		value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] + exp) : +exp)));
-		// Shift back
-		value = value.toString().split('e');
-		return +(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp));
-	}
-
-	// Decimal round
-	if (!Math.round10) {
-		Math.round10 = function(value, exp) {
-			return decimalAdjust('round', value, exp);
-		};
-	}
-	// Decimal floor
-	if (!Math.floor10) {
-		Math.floor10 = function(value, exp) {
-			return decimalAdjust('floor', value, exp);
-		};
-	}
-	// Decimal ceil
-	if (!Math.ceil10) {
-		Math.ceil10 = function(value, exp) {
-			return decimalAdjust('ceil', value, exp);
-		};
-	}
-
-})();
-
 var config = {
 	"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
 	"scope": "write_post files",
@@ -232,6 +181,20 @@ function build_post(text, annotations) {
 	return post;
 }
 
+function niceBytes(bytes) {
+	if(bytes < 1000) {
+		return "" + bytes;
+	}
+	var toGo = Math.floor(bytes/1000);
+	bytes %= 1000;
+	if(bytes < 10) {
+		bytes = '00' + bytes;
+	} else if(bytes < 100) {
+		bytes = '0' = bytes;
+	}
+	return niceBytes(toGo) + ',' + bytes;
+}
+
 function niceSize(bytes) {
 	var nice = '', addBytes = false;
 	size = bytes;
@@ -243,21 +206,22 @@ function niceSize(bytes) {
 		size /= 1024;
 		if(size < 1024) {
 			// KiB
-			nice += Math.round10(size, 2) + ' KiB';
+			nice += size.toFixed(2) + ' KiB';
 		} else {
 			size /= 1024;
 			if(size < 1024) {
 				// MiB
-				nice += Math.round10(size, 2) + ' MiB';
+				nice += size.toFixed(2) + ' MiB';
 			} else {
 				// GiB
 				size /= 1024;
-				nice += Math.round10(size, 2) + ' GiB';
+				nice += size.toFixed(2) + ' GiB';
 			}
 		}
 	}
 
 	if(addBytes) {
+		bytes = niceBytes(bytes);
 		nice += ' (' + bytes + ' bytes)';
 	}
 	return nice;
