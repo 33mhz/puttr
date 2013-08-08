@@ -190,7 +190,7 @@ function niceBytes(bytes) {
 	if(bytes < 10) {
 		bytes = '00' + bytes;
 	} else if(bytes < 100) {
-		bytes = '0' = bytes;
+		bytes = '0' + bytes;
 	}
 	return niceBytes(toGo) + ',' + bytes;
 }
@@ -294,7 +294,7 @@ function setupUploadForm() {
 		url: 'https://alpha-api.app.net/stream/0/files',
 		formData: {
 			access_token: config.auth_token,
-			type: "us.treeview.puttr",
+			type: "net.puttr.file",
 			public: true
 		},
 		dropZone: $('.dragdropzone'),
