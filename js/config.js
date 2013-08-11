@@ -19,6 +19,24 @@ function set_auth_token(token) {
 	localStorage['adn_auth_token'] = token;
 }
 
+function set_extension(val) {
+	localStorage['extension'] = val;
+}
+
+function set_num_load(val) {
+	if(val >= 3 && val <= 200) {
+		localStorage['numload'] = val;
+	}
+}
+
+function get_extension() {
+	return localStorage['extension'] || '1';
+}
+
+function get_num_load() {
+	return localStorage['numload'] || 24;
+}
+
 function have_auth_token() {
 	if(typeof config['auth_token'] === "undefined") {
 		// First check hash
@@ -106,12 +124,6 @@ function handlePostFile(file) {
 
 function handlePostImage(file) {
 	file = jQuery.extend(true, {}, file);
-	var name = file.name;
-	var pos = name.lastIndexOf('.');
-	if(pos) {
-		var ext = name.substring(pos);
-		file.url_short += ext;
-	}
 	handlePostFile(file);
 	var annotations = [{
 		"type": "net.app.core.oembed",
@@ -130,6 +142,16 @@ function loaded_file(file, into) {
 	if(!file.url_short) {
 		file.url_short = file.url_permanent || file.url;
 	}
+
+	if(get_extension() === '2' || (get_extension() === '1' && file.kind === 'image')) {
+		var name = file.name;
+		var pos = name.lastIndexOf('.');
+		if(pos) {
+			var ext = name.substring(pos);
+			file.url_short += ext;
+		}
+	}
+
 	var link = $('<a/>').text(file.name).attr('href', file.url_short);
 	var buttons = [
 		$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile),
@@ -343,7 +365,7 @@ function setupUploadForm() {
 	}
 }
 
-function setupModal() {
+function setupPostModal() {
 	var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
 
 	$('#PostModal textarea').keyup(function() {
@@ -377,13 +399,25 @@ function setupModal() {
 	});
 }
 
+function setupSettingsModal() {
+	$('#ExtensionPref button').click(function() {
+		set_extension($(this).attr('data-value'));
+	}).button('reset').filter(function() {
+		return $(this).attr('data-value') === get_extension();
+	}).addClass('active');
+
+	$('#NumLoadPref').val(get_num_load()).change(function() {
+		set_num_load($(this).val());
+	})
+}
+
 function loadMore() {
 	$('#LoadMore').addClass('hide');
 	$('#HaveAuthLoader').removeClass('hide');
 	var postData = {
 		'include_private': 0,
 		'include_incomplete': 0,
-		count: 24
+		count: get_num_load()
 	};
 	if($('#LoadMore').data('min_id')) {
 		postData['before_id'] = $('#LoadMore').data('min_id');
@@ -412,7 +446,8 @@ function logged_in_setup() {
 		// Rebind everything
 		setupButtons();
 		setupUploadForm();
-		setupModal();
+		setupPostModal();
+		setupSettingsModal();
 
 		$('#HaveAuthLoaded').removeClass('hide');
 
