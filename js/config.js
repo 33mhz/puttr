@@ -19,22 +19,24 @@ function set_auth_token(token) {
 	localStorage['adn_auth_token'] = token;
 }
 
-function set_extension(val) {
-	localStorage['extension'] = val;
-}
-
-function set_num_load(val) {
-	if(val >= 3 && val <= 200) {
-		localStorage['numload'] = val;
+function set_setting(name, val) {
+	switch(name) {
+		case 'numload':
+			if(val < 3 || val > 200) {
+				return;
+			}
+			break;
 	}
+	localStorage[name] = val;
 }
 
-function get_extension() {
-	return localStorage['extension'] || '1';
-}
-
-function get_num_load() {
-	return localStorage['numload'] || 24;
+function get_setting(name) {
+	var defaults = {
+		'extension': '1',
+		'numload': 24,
+		'urlType': '1'
+	};
+	return localStorage[name] || defaults[name];
 }
 
 function have_auth_token() {
@@ -120,6 +122,7 @@ function handlePostFile(file) {
 	}
 	$('#PostModal h3 span').text(name);
 	$('#PostModal textarea').data('annotations', []).val('[' + name + '](' + file.url_short + ')').keyup();
+	$('#PostModal p span').last().text('');
 }
 
 function handlePostImage(file) {
@@ -136,6 +139,10 @@ function handlePostImage(file) {
 		}
 	}];
 	$('#PostModal textarea').data('annotations', annotations);
+	if(get_setting('urlType') === '1') {
+		$('#PostModal textarea').val('[' + $('#PostModal h3 span').text() + '](https://photos.app.net/{post_id}/1)').keyup();
+		$('#PostModal p span').last().text('{post_id} will be replaced with the correct value when posting.');
+	}
 }
 
 function loaded_file(file, into) {
@@ -143,7 +150,7 @@ function loaded_file(file, into) {
 		file.url_short = file.url_permanent || file.url;
 	}
 
-	if(get_extension() === '2' || (get_extension() === '1' && file.kind === 'image')) {
+	if(get_setting('extension') === '2' || (get_setting('extension') === '1' && file.kind === 'image')) {
 		var name = file.name;
 		var pos = name.lastIndexOf('.');
 		if(pos) {
@@ -366,7 +373,7 @@ function setupUploadForm() {
 }
 
 function setupPostModal() {
-	var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p');
+	var submitButton = $('#PostModal .btn-primary'), lenP = $('#PostModal p span').first();
 
 	$('#PostModal textarea').keyup(function() {
 		var text = $(this).val();
@@ -400,15 +407,24 @@ function setupPostModal() {
 }
 
 function setupSettingsModal() {
-	$('#ExtensionPref button').click(function() {
-		set_extension($(this).attr('data-value'));
-	}).button('reset').filter(function() {
-		return $(this).attr('data-value') === get_extension();
-	}).addClass('active');
-
-	$('#NumLoadPref').val(get_num_load()).change(function() {
-		set_num_load($(this).val());
-	})
+	$('#SettingsModal .modal-body button').each(function() {
+		var name = $(this).attr('name'), val = $(this).attr('data-value');
+		if(get_setting(name) == val) {
+			$(this).addClass('active');
+		} else {
+			$(this).removeClass('active');
+		}
+		$(this).click(function() {
+			set_setting(name, val);
+		});
+	});
+	$('#SettingsModal .modal-body input').each(function() {
+		var name = $(this).attr('name');
+		$(this).val(get_setting(name));
+		$(this).change(function() {
+			set_setting(name, $(this).val());
+		});
+	});
 }
 
 function loadMore() {
@@ -417,7 +433,7 @@ function loadMore() {
 	var postData = {
 		'include_private': 0,
 		'include_incomplete': 0,
-		count: get_num_load()
+		count: get_setting('numload')
 	};
 	if($('#LoadMore').data('min_id')) {
 		postData['before_id'] = $('#LoadMore').data('min_id');

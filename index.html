@@ -142,7 +142,10 @@
 				</div>
 				<div class="modal-body">
 					<textarea id="PostData"></textarea>
-					<p class="text-right">256</p>
+					<p>
+						<span class="pull-right">256</span>
+						<span class="muted"></span>
+					</p>
 				</div>
 				<div class="modal-footer">
 					<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
@@ -158,17 +161,25 @@
 					<form class="form-horizontal">
 						<label class="control-label">Include file extensions?</label>
 						<div class="controls">
-							<div class="btn-group" id="ExtensionPref" data-toggle="buttons-radio">
-								<button type="button" class="btn" data-value="0">No</button>
-								<button type="button" class="btn" data-value="1">Images only</button>
-								<button type="button" class="btn" data-value="2">Always</button>
+							<div class="btn-group" data-toggle="buttons-radio">
+								<button name="extension" type="button" class="btn" data-value="0">No</button>
+								<button name="extension" type="button" class="btn" data-value="1">Images only</button>
+								<button name="extension" type="button" class="btn" data-value="2">Always</button>
 							</div>
 							<span class="help-inline">Change only effects newly loaded items.</span>
 						</div>
 						<label class="control-label" for="NumLoadPref">Number of files to load</label>
 						<div class="controls">
-							<input class="input-mini"  type="number" id="NumLoadPref" min=3 max=200 step=1 required />
+							<input name="numload" class="input-mini" type="number" id="NumLoadPref" min=3 max=200 step=1 required />
 							<span class="help-inline">Value must be between 3 and 200 inclusive.</span>
+						</div>
+						<label class="control-label">URL to use when posting</label>
+						<div class="controls">
+							<div class="btn-group" data-toggle="buttons-radio">
+								<button name="urlType" type="button" class="btn" data-value="0">files.app.net</button>
+								<button name="urlType" type="button" class="btn" data-value="1">photos.app.net</button>
+							</div>
+							<span class="help-inline">Only images will use photos.app.net URLs</span>
 						</div>
 					</form>
 				</div>
@@ -184,5 +195,5 @@
 	<script type="text/javascript" src="js/bootstrap.min.js?d=0"></script>
 	<script type="text/javascript" src="js/jquery.fileupload.js?d=1"></script>
 	<script type="text/javascript" src="js/appnet.js?d=1"></script>
-	<script type="text/javascript" src="js/config.js?d=7"></script>
+	<script type="text/javascript" src="js/config.js?d=8"></script>
 </body></html>
