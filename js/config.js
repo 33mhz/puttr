@@ -114,6 +114,48 @@ function deleteFile(e) {
 	return false;
 }
 
+function handlePostMulti() {
+	var annotations = [], msgs = [], images = 1;
+	$('.toggleButton.active').each(function() {
+		var file = $(this).data('file'), url;
+		file = jQuery.extend(true, {}, file);
+		var name = file.name;
+		var pos = name.lastIndexOf('.');
+		if(pos) {
+			name = name.substring(0, pos);
+		}
+		if(file.kind === "image") {
+			if(get_setting('urlType') === '1') {
+				url = 'https://photos.app.net/{post_id}/' + images;
+				images++;
+			} else {
+				url = file.url_short;
+			}
+			annotations.push({
+				"type": "net.app.core.oembed",
+				"value": {
+					"+net.app.core.file": {
+						"format": "oembed",
+						"file_token": file.file_token,
+						"file_id": file.id
+					}
+				}
+			});
+		} else {
+			url = file.url_short;
+		}
+		msgs.push('[' + name + '](' + url + ')')
+	});
+	$('#PostModal h3 span').text($('#MultiFile span').text());
+	$('#PostModal textarea').data('annotations', annotations).val(msgs.join(' ')).keyup();
+	if(images > 1) {
+		$('#PostModal p span').last().text('{post_id} will be replaced with the correct value when posting.');
+	} else {
+		$('#PostModal p span').last().text('');
+	}
+	$('#PostModal').modal('show');
+}
+
 function handlePostFile(file) {
 	var name = file.name;
 	var pos = name.lastIndexOf('.');
@@ -145,6 +187,20 @@ function handlePostImage(file) {
 	}
 }
 
+function multiFile() {
+	var count = $('.toggleButton.active').length;
+	if(count === 0) {
+		$('#MultiFile').addClass('hide');
+	} else {
+		if(count === 1) {
+			$('#MultiFile span').text('1 file');
+		} else {
+			$('#MultiFile span').text(count + ' files');
+		}
+		$('#MultiFile').removeClass('hide');
+	}
+}
+
 function loaded_file(file, into) {
 	if(!file.url_short) {
 		file.url_short = file.url_permanent || file.url;
@@ -161,9 +217,17 @@ function loaded_file(file, into) {
 
 	var link = $('<a/>').text(file.name).attr('href', file.url_short);
 	var buttons = [
-		$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile),
-		' ',
-		$('<a/>').addClass('btn btn-small btn-danger').text('Delete').data('file', file).click(deleteFile)
+		$('<div class="btn-group" />').append(
+			$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile)
+		).append(
+			$('<button type="button" data-toggle="button" />')
+				.addClass('btn btn-small toggleButton')
+				.data('file', file)
+				.html('<i class="icon-ok"></i>')
+		),
+		$('<div class="btn-group" />').append(
+			$('<a/>').addClass('btn btn-small btn-danger').text('Delete').data('file', file).click(deleteFile)
+		)
 	];
 	var div = $('<div/>');
 	for(var i in buttons) {
@@ -289,6 +353,8 @@ function setupButtons() {
 	$('#Logout').off('click', logout).on('click', logout);
 	$('#UploadButton').off('click', uploadButton).on('click', uploadButton);
 	$('#LoadMore a').off('click', loadMore).on('click', loadMore);
+	$(document).off('click', '.toggleButton', multiFile).on('click', '.toggleButton', multiFile);
+	$('#MultiFile button').off('click', handlePostMulti).on('click', handlePostMulti);
 }
 
 function showAlert(text, c, expire, before) {
@@ -398,6 +464,8 @@ function setupPostModal() {
 			$('#PostModal').modal('hide');
 			showAlert('Posted!');
 			submitButton.text('Post').removeAttr('disabled');
+			$('.toggleButton.active').removeClass('active');
+			multiFile();
 		}).fail(function() {
 			console.log(arguments);
 			alert('Unable to post! Please logout and try again.');
