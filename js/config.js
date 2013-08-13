@@ -34,7 +34,8 @@ function get_setting(name) {
 	var defaults = {
 		'extension': '1',
 		'numload': 24,
-		'urlType': '1'
+		'urlType': '1',
+		'default_tick': '1'
 	};
 	return localStorage[name] || defaults[name];
 }
@@ -107,6 +108,7 @@ function deleteFile(e) {
 		$t.closest('.span2').remove();
 		showAlert('Deleted!');
 		updateUser();
+		multiFile();
 	}).fail(function() {
 		console.log(arguments);
 		alert('Unable to delete that file! Please logout and try again.');
@@ -115,6 +117,9 @@ function deleteFile(e) {
 }
 
 function handlePostMulti() {
+	if($('.toggleButton.active').length === 0) {
+		return;
+	}
 	var annotations = [], msgs = [], images = 1;
 	$('.toggleButton.active').each(function() {
 		var file = $(this).data('file'), url;
@@ -190,8 +195,10 @@ function handlePostImage(file) {
 function multiFile() {
 	var count = $('.toggleButton.active').length;
 	if(count === 0) {
-		$('#MultiFile').addClass('hide');
+		$('#MultiFile button').attr('disabled', true);
+		$('#MultiFile span').text('0 files');
 	} else {
+		$('#MultiFile button').removeAttr('disabled');
 		if(count === 1) {
 			$('#MultiFile span').text('1 file');
 		} else {
@@ -201,7 +208,7 @@ function multiFile() {
 	}
 }
 
-function loaded_file(file, into) {
+function loaded_file(file, into, tick) {
 	if(!file.url_short) {
 		file.url_short = file.url_permanent || file.url;
 	}
@@ -235,6 +242,9 @@ function loaded_file(file, into) {
 	}
 	var divOuter = $('<div/>').addClass('span2').append(div)
 	$('<div/>').addClass('span2 link').append(link).replaceAll(into).after(divOuter);
+	if(tick && get_setting('default_tick') === '1') {
+		div.find('.toggleButton').click();
+	}
 }
 
 function uploadButton(e) {
@@ -409,7 +419,7 @@ function setupUploadForm() {
 			return false;
 		}
 	}).bind('fileuploaddone', function (e, data) {
-		loaded_file(data.result.data, data.context);
+		loaded_file(data.result.data, data.context, true);
 		updateUser();
 	}).bind('fileuploadprogress', function (e, data) {
 		if(!data.context) {
@@ -509,7 +519,7 @@ function loadMore() {
 	$.appnet.file.getUser(postData).done(function(data) {
 		if(data.data.length > 0) {
 			for(var i = 0; i < data.data.length; ++i) {
-				loaded_file(data.data[i], add_file());
+				loaded_file(data.data[i], add_file(), false);
 			}
 		}
 

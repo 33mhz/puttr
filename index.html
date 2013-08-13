@@ -132,13 +132,13 @@
 				</div>
 				<div class="row-fluid clearfix"><p>&nbsp;</p></div>
 				<div class="row-fluid">
-					<div class="span10 offset1 hide" id="MultiFile">
-						<button type="button" class="btn btn-block btn-success"><i class="icon-share icon-white"></i> Post <span> files</span> to ADN</button>
+					<div class="span10 offset1" id="MultiFile">
+						<button type="button" disabled class="btn btn-block btn-success"><i class="icon-share icon-white"></i> Post <span>0 files</span> to ADN</button>
 					</div>
 				</div>
 				<div class="row-fluid">
 					<div class="span10 offset1 muted text-center">
-						To post multiple files at the same, simply tick the files you want to post and click the the button that appears above this line.
+						To post multiple files at the same, simply tick the files you want to post and click the above button.
 					</div>
 				</div>
 				<div class="row-fluid" id="LoadedFiles">
@@ -203,6 +203,14 @@
 							</div>
 							<span class="help-inline">Only images will use photos.app.net URLs</span>
 						</div>
+						<label class="control-label">Auto-select new files</label>
+						<div class="controls">
+							<div class="btn-group" data-toggle="buttons-radio">
+								<button name="default_tick" type="button" class="btn" data-value="0">No</button>
+								<button name="default_tick" type="button" class="btn" data-value="1">Yes</button>
+							</div>
+							<span class="help-inline">Do newly uploaded files get automatically selected for posting?</span>
+						</div>
 					</form>
 				</div>
 				<div class="modal-footer">
@@ -217,5 +225,5 @@
 	<script type="text/javascript" src="js/bootstrap.min.js?d=0"></script>
 	<script type="text/javascript" src="js/jquery.fileupload.js?d=1"></script>
 	<script type="text/javascript" src="js/appnet.js?d=1"></script>
-	<script type="text/javascript" src="js/config.js?d=9"></script>
+	<script type="text/javascript" src="js/config.js?d=10"></script>
 </body></html>
