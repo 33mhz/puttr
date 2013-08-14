@@ -17,7 +17,7 @@ $logs = $elem->xpath('/log/logentry');
 
 foreach($logs as $log) {
 	$item = '<item>';
-	$title = htmlentities('Commit r' . $log->attributes()->revision);
+	$title = htmlentities('Puttr: commit r' . $log->attributes()->revision);
 	$item .= '<title>' . $title . '</title>';
 	$description = htmlentities((string)$log->msg);
 	$item .= "<description>$description</description>";
