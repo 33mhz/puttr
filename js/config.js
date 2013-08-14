@@ -1,9 +1,12 @@
-var config = {
-	"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
-	"scope": "write_post files",
-	"redirect_uri": window.location.protocol + '//' + window.location.host + window.location.pathname,
-	"response_type": "token"
-};
+var
+	wl = window.location,
+	config = {
+		"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
+		"scope": "write_post files",
+		"redirect_uri": wl.protocol + '//' + wl.host + wl.pathname,
+		"response_type": "token"
+	},
+	md_regex = /\[([^\[\]]+?)\]\(([^)]+?)\)/g;
 
 function generate_login_link() {
 	var base = "https://account.app.net/oauth/authenticate?";
@@ -252,8 +255,6 @@ function uploadButton(e) {
 	$('#UploadForm input[type=file]').click();
 	return false;
 }
-
-var md_regex = /\[([^\[\]]+?)\]\(([^)]+?)\)/g;
 
 function build_post(text, annotations) {
 	var post = {
