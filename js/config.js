@@ -38,7 +38,9 @@ function get_setting(name) {
 		'extension': '1',
 		'numload': 24,
 		'urlType': '1',
-		'default_tick': '1'
+		'default_tick': '1',
+		'post_length': 256,
+		'post_id_length': 10
 	};
 	return localStorage[name] || defaults[name];
 }
@@ -353,6 +355,26 @@ function updateUser(callback) {
 	});
 }
 
+function updateConfig() {
+	$.appnet.config.get().done(function(data) {
+		if(data.meta.code !== 200) {
+			console.log(arguments);
+			// Try again in 5 minutes
+			setTimeout(updateConfig, 300000);
+		} else {
+			data = data.data;
+			set_setting('post_length', data.post.text_max_length);
+			set_setting('post_id_length', data.text.uri_template_length.post_id);
+			// Try again in a day
+			setTimeout(updateConfig, 86400000);
+		}
+	}).fail(function() {
+		console.log(arguments);
+		// Try again in 5 minutes
+		setTimeout(updateConfig, 300000);
+	});
+}
+
 function setupUser() {
 	$('#Username').text(config.data.user.name + ' (@' + config.data.user.username + ')');
 	$('#AvailableSpace').text(niceSize(config.data.storage.available));
@@ -456,14 +478,19 @@ function setupPostModal() {
 		var text = $(this).val();
 		text = text.replace(md_regex, '$1');
 		var len = text.length;
-		lenP.text(256 - len).removeClass('text-warning text-error text-success');
+		var post_ids = text.match(/{post_id}/g);
+		if(post_ids) {
+			len -= (post_ids.length * 9);
+			len += (post_ids.length * get_setting('post_id_length'));
+		}
+		lenP.text(get_setting('post_length') - len).removeClass('text-warning text-error text-success');
 		submitButton.removeAttr('disabled');
-		if(len > 256) {
+		if(len > get_setting('post_length')) {
 			lenP.addClass('text-error');
 			submitButton.attr('disabled', 'disabled');
-		} else if(len === 256) {
+		} else if(len === get_setting('post_length')) {
 			lenP.addClass('text-success');
-		} else if(len > 236) {
+		} else if(len > (get_setting('post_length') - 20)) {
 			lenP.addClass('text-warning');
 		}
 	});
@@ -548,6 +575,7 @@ function logged_in_setup() {
 
 		$('#LoadMore a').click();
 	});
+	updateConfig();
 }
 
 if(have_auth_token()) {

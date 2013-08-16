@@ -5,7 +5,95 @@
  *
  */
 
-/*global jQuery: true */
+/*global jQuery: true, require: true, module: true, exports: true */
+if (typeof exports !== 'undefined')
+{
+  jQuery = {};
+
+  jQuery.param = function (object)
+  {
+    'use strict';
+    // Query String able to use escaping
+    var query = require('querystring');
+
+    var result = '',
+        key = '',
+        postfix = '&';
+
+    var i;
+    for (i in object)
+    {
+      // If not prefix like a[one]...
+//      if (! prefix)
+//      {
+      key = query.escape(i);
+//      }
+//      else
+//      {
+//        key = prefix + '[' + query.escape(i) + ']';
+//      }
+
+      // String pass as is...
+      if (typeof(object[i]) === 'string')
+      {
+        result += key + '=' + query.escape(object[i]) + postfix;
+        continue;
+      }
+
+      // objectects and arrays pass depper
+/*
+      if (typeof(object[i]) === 'object' || typeof(object[i]) === 'array')
+      {
+        result += toURL(object[i], key) + postfix;
+        continue;
+      }
+*/
+      // Other passed stringified
+      if (object[i].toString)
+      {
+        result += key + '=' + query.escape(object[i].toString()) + postfix;
+        continue;
+      }
+    }
+    // Delete trailing delimiter (&) Yep it's pretty durty way but
+    // there was an error gettin length of the objectect;
+    result = result.substr(0, result.length - 1);
+    return result;
+  };
+
+  jQuery.ajax = function (options)
+  {
+    'use strict';
+    var http = require('q-io/http');
+    var Reader = require('q-io/reader');
+    var Q = require('q');
+    var streamifier = require('streamifier');
+    var request = {
+      url: options.url,
+      method: options.type,
+      headers: options.headers,
+    };
+    if (options.data)
+    {
+      request.headers['Content-Type'] = 'application/json';
+      var newStream = streamifier.createReadStream(options.data);
+      request.body = Reader(newStream);
+    }
+    var result = http.request(http.normalizeRequest(request));
+    return result.then(function (response) {
+      if (response.status !== 200)
+      {
+        throw response;
+      }
+      return Q.post(response.body, 'read', []);
+    });
+  };
+
+  jQuery.extend = require('xtend');
+
+  jQuery.wait = require('q').delay;
+}
+
 (function ($) {
   'use strict';
   var appnet = {
@@ -56,12 +144,17 @@
 
 }(jQuery));
 
+if (typeof module !== 'undefined')
+{
+  module.exports = jQuery.appnet;
+}
+
 /*global jQuery: true */
 (function ($) {
 'use strict';
   $.appnet.endpoints = {
     "format_version": 3,
-    "data_version": 3,
+    "data_version": 4,
     "scopes": {
         "basic": "See basic information about this user",
         "stream": "Read this user's stream",
@@ -80,28 +173,35 @@
         "channel",
         "message",
         "file",
-        "stream",
+        "AppStream",
+        "UserStream",
         "filter",
         "interaction",
         "marker",
         "text",
         "token",
         "place",
-        "explore"
+        "explore",
+        "config"
     ],
     "migrations": [ ],
     "parameter_category": {
         "pagination":      [ "since_id", "before_id", "count" ],
-        "general_user":    [ "include_annotations", "include_user_annotations", "include_html" ],
+        "general_user":    [ "include_annotations", "include_user_annotations", "include_html",
+                             "connection_id" ],
         "general_post":    [ "include_muted", "include_deleted", "include_directed_posts", "include_machine",
-                             "include_starred_by", "include_reposters", "include_annotations", "include_post_annotations",
-                             "include_user_annotations", "include_html" ],
+                             "include_starred_by", "include_reposters", "include_annotations", 
+                             "include_post_annotations", "include_user_annotations", "include_html",
+                             "connection_id" ],
         "general_channel": [ "channel_types", "include_marker", "include_read", "include_recent_message", 
-                             "include_annotations", "include_user_annotations", "include_message_annotations" ],
+                             "include_annotations", "include_user_annotations", "include_message_annotations",
+                             "connection_id" ],
         "general_message": [ "include_muted", "include_deleted", "include_machine",
-                             "include_annotations", "include_user_annotations", "include_message_annotations", "include_html" ],
+                             "include_annotations", "include_user_annotations", "include_message_annotations", 
+                             "include_html", "connection_id" ],
         "general_file":    [ "file_types", "include_incomplete", "include_private",
-                             "include_annotations", "include_file_annotations", "include_user_annotations" ],
+                             "include_annotations", "include_file_annotations", "include_user_annotations",
+                 "connection_id" ],
 
         "user":            [ "name", "locale", "timezone", "description" ],
         "avatar":          "image",
@@ -109,15 +209,23 @@
         "post":            [ "text", "reply_to", "machine_only", "annotations", "entities" ],
         "channel":         [ "readers", "writers", "annotations", "type" ],
         "message":         [ "text", "reply_to", "annotations", "entities", "machine_only", "destinations" ],
-        "file":                   [ "text", "reply_to", "annotations", "entities", "machine_only" ],
+        "file":            [ "kind", "type", "name", "public", "annotations" ],
         "content":         "content",
-        "stream":          [ "object_types", "type", "filter_id", "key" ],
+        "AppStream":       [ "object_types", "type", "filter_id", "key" ],
+    "UserStream":      [ ],
         "filter":          [ "name", "match_policy", "clauses"],
         "marker":          [ "id", "name", "percentage" ],
         "post_or_message": [ "text" ],
         "placesearch":     [ "latitude", "longitude", "q", "radius", "count", "remove_closed",
                              "altitude", "horizontal_accuracy", "vertical_accuracy" ],
-
+        "search": [ "index", "order", "query", "text", "hashtags", "links",
+                    "link_domains", "mentions", "leading_mentions",
+                    "annotation_types", "attachment_types", "crosspost_url",
+                    "crosspost_domain", "place_id", "is_reply", "is_directed",
+                    "has_location", "has_checkin", "is_crosspost",
+                    "has_attachment", "has_oembed_photo", "has_oembed_video",
+                    "has_oembed_html5video", "has_oembed_rich", "language",
+                    "client_id", "creator_id", "reply_to", "thread_id" ],
         "user_ids":    [ "ids" ],
         "post_ids":    [ "ids" ],
         "channel_ids": [ "ids" ],
@@ -889,7 +997,7 @@
         },
         {
             "id": "214",
-            "group": "stream",
+            "group": "post",
             "name": "getUnifiedStream",
             "url_params": [],
             "data_params": [],
@@ -940,6 +1048,23 @@
             "scope": "basic",
             "description": "Report a Post",
             "link": "http://developers.app.net/docs/resources/post/report/#report-a-post"
+        },
+        {
+            "id": "217",
+            "group": "post",
+            "name": "search",
+            "url_params": [],
+            "data_params": [],
+            "array_params": [],
+        "get_params": [ "general_post", "search" ],
+            "method": "GET",
+            "url": [
+                "posts/search"
+            ],
+            "token": "Any",
+            "scope": "basic",
+            "description": "Search for Posts",
+            "link": "http://developers.app.net/docs/resources/post/search/#search-for-posts"
         },
         {
             "id": "300",
@@ -1523,7 +1648,7 @@
         },
         {
             "id": "600",
-            "group": "stream",
+            "group": "AppStream",
             "name": "create",
             "url_params": [],
             "data_params": [
@@ -1542,7 +1667,7 @@
         },
         {
             "id": "601",
-            "group": "stream",
+            "group": "AppStream",
             "name": "get",
             "url_params": [
                 "stream_id"
@@ -1561,7 +1686,7 @@
         },
         {
             "id": "602",
-            "group": "stream",
+            "group": "AppStream",
             "name": "update",
             "url_params": [
                 "stream_id"
@@ -1582,7 +1707,7 @@
         },
         {
             "id": "603",
-            "group": "stream",
+            "group": "AppStream",
             "name": "destroy",
             "url_params": [
                 "stream_id"
@@ -1601,7 +1726,7 @@
         },
         {
             "id": "604",
-            "group": "stream",
+            "group": "AppStream",
             "name": "getAll",
             "url_params": [],
             "data_params": [],
@@ -1618,7 +1743,7 @@
         },
         {
             "id": "605",
-            "group": "stream",
+            "group": "AppStream",
             "name": "destroyAll",
             "url_params": [],
             "data_params": [],
@@ -1635,6 +1760,45 @@
         },
         {
             "id": "700",
+            "group": "UserStream",
+            "name": "destroy",
+            "url_params": [
+                "connection_id"
+            ],
+            "data_params": [],
+            "array_params": [],
+        "get_params": [],
+            "method": "DELETE",
+            "url": [
+                "streams/me/streams/"
+            ],
+            "token": "user",
+            "scope": "basic",
+            "description": "Delete a User Stream",
+            "link": "http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream"
+        },
+        {
+            "id": "701",
+            "group": "UserStream",
+            "name": "destroySubscription",
+            "url_params": [
+                "connection_id",
+        "subscription_id"
+            ],
+            "data_params": [],
+            "array_params": [],
+        "get_params": [],
+            "method": "DELETE",
+            "url": [
+                "streams/me/streams/"
+            ],
+            "token": "user",
+            "scope": "basic",
+            "description": "Delete a User Stream Subscription",
+            "link": "http://developers.app.net/docs/resources/user-stream/lifecycle/#delete-a-user-stream-subscription"
+        },
+        {
+            "id": "800",
             "group": "filter",
             "name": "create",
             "url_params": [],
@@ -1653,7 +1817,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#create-a-filter"
         },
         {
-            "id": "701",
+            "id": "801",
             "group": "filter",
             "name": "get",
             "url_params": [
@@ -1672,7 +1836,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#retrieve-a-filter"
         },
         {
-            "id": "702",
+            "id": "802",
             "group": "filter",
             "name": "update",
             "url_params": [
@@ -1693,7 +1857,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#update-a-filter"
         },
         {
-            "id": "703",
+            "id": "803",
             "group": "filter",
             "name": "destroy",
             "url_params": [
@@ -1712,7 +1876,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#delete-a-filter"
         },
         {
-            "id": "704",
+            "id": "804",
             "group": "filter",
             "name": "getUser",
             "url_params": [],
@@ -1729,7 +1893,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#get-current-users-filters"
         },
         {
-            "id": "705",
+            "id": "805",
             "group": "filter",
             "name": "destroyUser",
             "url_params": [],
@@ -1746,7 +1910,7 @@
             "link": "http://developers.app.net/docs/resources/filter/lifecycle/#delete-all-of-the-current-users-filters"
         },
         {
-            "id": "800",
+            "id": "900",
             "group": "interaction",
             "name": "get",
             "url_params": [],
@@ -1763,7 +1927,7 @@
             "link": "http://developers.app.net/docs/resources/interaction/"
         },
         {
-            "id": "900",
+            "id": "1000",
             "group": "marker",
             "name": "update",
             "url_params": [],
@@ -1782,7 +1946,7 @@
             "link": "http://developers.app.net/docs/resources/stream-marker/#update-a-stream-marker"
         },
         {
-            "id": "1000",
+            "id": "1100",
             "group": "text",
             "name": "process",
             "url_params": [],
@@ -1801,7 +1965,7 @@
             "link": "http://developers.app.net/docs/resources/text-processor/"
         },
         {
-            "id": "1100",
+            "id": "1200",
             "group": "token",
             "name": "get",
             "url_params": [],
@@ -1818,7 +1982,7 @@
             "link": "http://developers.app.net/docs/resources/token/#retrieve-current-token"
         },
         {
-            "id": "1101",
+            "id": "1201",
             "group": "token",
             "name": "getAuthorizedIds",
             "url_params": [],
@@ -1835,7 +1999,7 @@
             "link": "http://developers.app.net/docs/resources/token/#retrieve-authorized-user-ids-for-an-app"
         },
         {
-            "id": "1102",
+            "id": "1202",
             "group": "token",
             "name": "getAuthorized",
             "url_params": [],
@@ -1852,7 +2016,7 @@
             "link": "http://developers.app.net/docs/resources/token/#retrieve-authorized-user-tokens-for-an-app"
         },
         {
-            "id": "1200",
+            "id": "1300",
             "group": "place",
             "name": "get",
             "url_params": [
@@ -1871,7 +2035,7 @@
             "link": "http://developers.app.net/docs/resources/place/#retrieve-a-place"
         },
         {
-            "id": "1201",
+            "id": "1301",
             "group": "place",
             "name": "search",
             "url_params": [],
@@ -1888,7 +2052,7 @@
             "link": "http://developers.app.net/docs/resources/place/#search-for-a-place"
         },
         {
-            "id": "1300",
+            "id": "1400",
             "group": "explore",
             "name": "show",
             "url_params": [],
@@ -1905,7 +2069,7 @@
             "link": "http://developers.app.net/docs/resources/explore/#retrieve-all-explore-streams"
         },
         {
-            "id": "1301",
+            "id": "1401",
             "group": "explore",
             "name": "get",
             "url_params": [
@@ -1922,6 +2086,23 @@
             "scope": "basic",
             "description": "Retrieve an Explore Stream",
             "link": "http://developers.app.net/docs/resources/explore/#retrieve-an-explore-stream"
+        },
+        {
+            "id": "1500",
+            "group": "config",
+            "name": "get",
+            "url_params": [],
+            "data_params": [],
+            "array_params": [],
+        "get_params": [],
+            "method": "GET",
+            "url": [
+                "config/"
+            ],
+            "token": "None",
+            "scope": "basic",
+            "description": "Retrieve the Configuration Object",
+            "link": "http://developers.app.net/docs/resources/config/#retrieve-the-configuration-object"
         }
     ]
 };
@@ -1937,12 +2118,19 @@
 /*global jQuery: true */
 (function ($) {
   'use strict';
-
   function wait(time)
   {
-    return $.Deferred(function (newDeferred) {
-      setTimeout($.bind(newDeferred.resolve, newDeferred), time);
-    }).promise();
+    console.log('Waiting ' + time + ' ms to retry');
+    if ($.wait === undefined)
+    {
+      return $.Deferred(function (newDeferred) {
+        setTimeout($.bind(newDeferred.resolve, newDeferred), time);
+      }).promise();
+    }
+    else
+    {
+      return $.wait(time);
+    }
   }
 
   function makeArgs(args)
@@ -2005,26 +2193,43 @@
       options.data = makeData(data);
     }
     var promise = $.ajax(options);
-/*
     // If we get a 429 busy response, we should retry once after
     // waiting the requisite time.
-    promise.fail(function (response) {
-      if (response.statusCode() === 429)
+    return promise.fail(function (response) {
+      var status;
+      if (typeof exports !== 'undefined')
       {
-        var delaySec = parseInt(response.getRequestHeader('Retry-After'), 10);
-        var result = wait(delaySec * 1000);
-        result.then(function () {
-          return $.ajax(options);
-        });
-        return result;
+        status = response.status;
       }
       else
       {
-        throw response;
+        status = response.statusCode();
+      }
+      if (status === 429)
+      {
+        var delaySec;
+        if (typeof exports !== 'undefined')
+        {
+          delaySec = parseInt(response.headers['Retry-After'], 10);
+        }
+        else
+        {
+          delaySec = parseInt(response.getRequestHeader('Retry-After'), 10);
+        }
+        var result = wait(delaySec * 1000);
+        return result.then(function () {
+          return $.ajax(options);
+        });
+      }
+      else
+      {
+        if (typeof exports !== 'undefined')
+        {
+          throw response;
+        }
+        return response;
       }
     });
-*/
-    return promise;
   };
 
 }(jQuery));
@@ -2044,7 +2249,7 @@
   {
     addTypes(endpoints.stream_types);
     addEndpoints(endpoints.base, endpoints.endpoints);
-//    addChained();
+    addChained();
   }
 
   function addTypes(types)
@@ -2093,7 +2298,7 @@
     {
       args.ids = vars.list.join(',');
     }
-    $.extend(args, argsIn);
+    args = $.extend({}, args, argsIn);
     return $.appnet.core.call(url, vars.end.method, args, vars.data);
   }
 
@@ -2208,8 +2413,10 @@
   function addChained()
   {
     $.appnet.all = {};
-    addAll('getSubscriptions', $.appnet.subscription.get);
+    addAll('getSubscriptions', $.appnet.channel.getUserSubscribed);
     addAllOne('getMessages', $.appnet.message.getChannel);
+    addAllOne('getUserPosts', $.appnet.post.getUser);
+    addAllOne('getFollowing', $.appnet.user.getFollowing);
     addAllList('getChannelList', $.appnet.channel.getList);
     addAllList('getUserList', $.appnet.user.getList);
   }
@@ -2243,28 +2450,33 @@
 
       function fetchMore(response)
       {
+        if ($.wait !== undefined)
+        {
+          response = JSON.parse(response.toString());
+        }
         result = result.concat(response.data);
         if (response.meta.more)
         {
           args.before_id = response.meta.min_id;
           var promise = single(args);
-          promise.then(fetchMore);
-          return promise;
+          return promise.then(fetchMore);
         }
         else
         {
+          var meta = {};
+          if (response.meta.max_id)
+          {
+            meta.max_id = response.meta.max_id;
+          }
           return {
             data: result,
-            meta: {
-              max_id: response.meta.max_id
-            }
+            meta: meta
           };
         }
       }
 
       var first = single(args);
-      first.then(fetchMore);
-      return first;
+      return first.then(fetchMore);
     };
   }
 
@@ -2278,14 +2490,17 @@
 
       function fetchMore(response)
       {
+        if ($.wait !== undefined)
+        {
+          response = JSON.parse(response.toString());
+        }
         result = result.concat(response.data);
         start += 200;
         end = start + (list.length < start + 200 ? list.length : 200);
         if (start < list.length)
         {
           var promise = single(list.slice(start, end), args);
-          promise.then(fetchMore);
-          return promise;
+          return promise.then(fetchMore);
         }
         else
         {
@@ -2294,8 +2509,7 @@
       }
 
       var first = single(list.slice(start, end), args);
-      first.then(fetchMore);
-      return first;
+      return first.then(fetchMore);
     };
   }
 
