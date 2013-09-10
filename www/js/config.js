@@ -109,8 +109,7 @@ function deleteFile(e) {
 	$t.text('Deleting...').off('click');
 	var file = $(this).data('file');
 	$.appnet.file.destroy(file.id).done(function() {
-		$t.closest('.span2').prev().remove();
-		$t.closest('.span2').remove();
+		$t.closest('.span4').remove();
 		showAlert('Deleted!');
 		updateUser();
 		multiFile();
@@ -230,23 +229,21 @@ function loaded_file(file, into, tick) {
 	var link = $('<a/>').text(file.name).attr('href', file.url_short);
 	var buttons = [
 		$('<div class="btn-group" />').append(
-			$('<a/>').addClass('btn btn-small').text('Post to ADN').data('file', file).click(postFile)
-		).append(
 			$('<button type="button" data-toggle="button" />')
 				.addClass('btn btn-small toggleButton')
 				.data('file', file)
 				.html('<i class="icon-ok"></i>')
-		),
-		$('<div class="btn-group" />').append(
-			$('<a/>').addClass('btn btn-small btn-danger').text('Delete').data('file', file).click(deleteFile)
+		).append(
+			$('<a/>').addClass('btn btn-small').html('<i class="icon-share"></i>').data('file', file).click(postFile)
+		).append(
+			$('<a/>').addClass('btn btn-small btn-danger').html('<i class="icon-trash icon-white"></i>').data('file', file).click(deleteFile)
 		)
 	];
-	var div = $('<div/>');
+	var div = $('<div/>').addClass('buttons');
 	for(var i in buttons) {
 		div.append(buttons[i]);
 	}
-	var divOuter = $('<div/>').addClass('span2').append(div)
-	$('<div/>').addClass('span2 link').append(link).replaceAll(into).after(divOuter);
+	$('<div/>').addClass('span4').append(link).append(div).replaceAll(into);
 	if(tick && get_setting('default_tick') === '1') {
 		div.find('.toggleButton').click();
 	}

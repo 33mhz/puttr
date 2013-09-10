@@ -12,30 +12,13 @@
 			min-height: 26px;
 			margin-left: 1%;
 			margin-bottom: 3px;
-			width: 32.3%;
+			position: relative;
 		}
 
-		#LoadedFiles div.span2 {
-			overflow: hidden;
-			max-height: 26px;
-			min-height: 26px;
-			margin-left: 1%;
-			margin-bottom: 3px;
-			width: 15.7%;
-		}
-
-		#LoadedFiles div.span2 > a {
-			height: 20px;
-			width: 10000px;
-			display: block;
-			margin-top: 3px;
-		}
-
-		#LoadedFiles div.span2.link {
-			max-height: 20px;
-			min-height: 20px;
-			height: 20px;
-			vertical-align: middle;
+		#LoadedFiles div.span4 > div.buttons {
+			position: absolute;
+			right: 0;
+			display: inline-block;
 		}
 
 		.dragdropzone {
@@ -66,18 +49,6 @@
 
 		.toggleButton:hover i, .toggleButton.active i {
 			background-position-y: 0;
-		}
-
-		@media(max-width:1000px){
-			#LoadedFiles div.span2 {
-				margin-left: 0;
-				width: 50%;
-				float: left;
-			}
-
-			#LoadedFiles div.span2 > div {
-				margin-left: 5px;
-			}
 		}
 	</style>
 </head>
