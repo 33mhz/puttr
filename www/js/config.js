@@ -474,7 +474,7 @@ function setupPostModal() {
 	$('#PostModal textarea').keyup(function() {
 		var text = $(this).val();
 		text = text.replace(md_regex, '$1');
-		var len = text.length;
+		var len = punycode.ucs2.decode(text).length;
 		var post_ids = text.match(/{post_id}/g);
 		if(post_ids) {
 			len -= (post_ids.length * 9);
