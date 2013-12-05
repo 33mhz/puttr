@@ -269,8 +269,8 @@ function build_post(text, annotations) {
 		text = left + match[1] + right;
 
 		link = {
-			pos: match.index,
-			len: match[1].length,
+			pos: punycode.ucs2.decode(left).length,
+			len: punycode.ucs2.decode(match[1]).length,
 			url: match[2]
 		};
 
