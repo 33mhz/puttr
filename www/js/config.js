@@ -257,30 +257,14 @@ function uploadButton(e) {
 
 function build_post(text, annotations) {
 	var post = {
-		annotations: annotations
+		annotations: annotations,
+		text: text,
+		entities: {
+			parse_links: true,
+			parse_markdown_links: true
+		}
 	};
-	
-	var match, left, right, links = [], link;
-	while((match = md_regex.exec(text))) {
-		// full thing, text, url
-		left = text.substring(0, match.index);
-		right = text.substring(match.index + match[0].length);
 
-		text = left + match[1] + right;
-
-		link = {
-			pos: punycode.ucs2.decode(left).length,
-			len: punycode.ucs2.decode(match[1]).length,
-			url: match[2]
-		};
-
-		links.push(link);
-
-		md_regex.lastIndex = match.index;
-	}
-
-	post.text = text;
-	post.entities = { links: links, parse_links: true };
 	return post;
 }
 
