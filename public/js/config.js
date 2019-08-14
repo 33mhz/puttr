@@ -1,7 +1,7 @@
 var
 	wl = window.location,
 	config = {
-		"client_id": "czv7anuSkX4UTyN7PmHvvVLxfCQK2U3X",
+		"client_id": "Nsup4QJpO1u2_-bgC-0Uq09X0pYuXXw7",
 		"scope": "write_post files",
 		"redirect_uri": wl.protocol + '//' + wl.host + wl.pathname,
 		"response_type": "token"
@@ -9,7 +9,7 @@ var
 	md_regex = /\[([^\[\]]+?)\]\(([^)]+?)\)/g;
 
 function generate_login_link() {
-	var base = "https://account.app.net/oauth/authenticate?";
+	var base = "https://pnut.io/oauth/authenticate?";
 	for(var idx in config) {
 		base += encodeURIComponent(idx) + "=" + encodeURIComponent(config[idx]) + "&";
 	}
@@ -19,7 +19,7 @@ function generate_login_link() {
 function set_auth_token(token) {
 	config['auth_token'] = token;
 	$.appnet.authorize(token);
-	localStorage['adn_auth_token'] = token;
+	localStorage['pnut_auth_token'] = token;
 }
 
 function set_setting(name, val) {
@@ -55,8 +55,8 @@ function have_auth_token() {
 			return true;
 		}
 		// Second, check locale storage
-		if(localStorage['adn_auth_token']) {
-			set_auth_token(localStorage['adn_auth_token']);
+		if(localStorage['pnut_auth_token']) {
+			set_auth_token(localStorage['pnut_auth_token']);
 			return true;
 		}
 		// Third, nope!
@@ -67,7 +67,7 @@ function have_auth_token() {
 }
 
 function logout() {
-	localStorage.removeItem('adn_auth_token');
+	localStorage.removeItem('pnut_auth_token');
 	config['auth_token'] = undefined;
 	$('#HaveAuthLoaded').html('').addClass('hide');
 	$('#HaveAuth,#NeedAuth').toggleClass('hide');
@@ -135,15 +135,15 @@ function handlePostMulti() {
 		}
 		if(file.kind === "image") {
 			if(get_setting('urlType') === '1') {
-				url = 'https://photos.app.net/{post_id}/' + images;
+				url = 'https://photos.pnut.io/{object_id}/' + images;
 				images++;
 			} else {
-				url = file.url_short;
+				url = file.link_short;
 			}
 			annotations.push({
-				"type": "net.app.core.oembed",
+				"type": "io.pnut.core.oembed",
 				"value": {
-					"+net.app.core.file": {
+					"+io.pnut.core.file": {
 						"format": "oembed",
 						"file_token": file.file_token,
 						"file_id": file.id
@@ -151,14 +151,14 @@ function handlePostMulti() {
 				}
 			});
 		} else {
-			url = file.url_short;
+			url = file.link_short;
 		}
 		msgs.push('[' + name + '](' + url + ')')
 	});
 	$('#PostModal h3 span').text($('#MultiFile span').text());
-	$('#PostModal textarea').data('annotations', annotations).val(msgs.join(' ')).keyup();
+	$('#PostModal textarea').data('raw', annotations).val(msgs.join(' ')).keyup();
 	if(images > 1) {
-		$('#PostModal p span').last().text('{post_id} will be replaced with the correct value when posting.');
+		$('#PostModal p span').last().text('{object_id} will be replaced with the correct value when posting.');
 	} else {
 		$('#PostModal p span').last().text('');
 	}
@@ -172,7 +172,7 @@ function handlePostFile(file) {
 		name = name.substring(0, pos);
 	}
 	$('#PostModal h3 span').text(name);
-	$('#PostModal textarea').data('annotations', []).val('[' + name + '](' + file.url_short + ')').keyup();
+	$('#PostModal textarea').data('raw', []).val('[' + name + '](' + file.link_short + ')').keyup();
 	$('#PostModal p span').last().text('');
 }
 
@@ -180,19 +180,19 @@ function handlePostImage(file) {
 	file = jQuery.extend(true, {}, file);
 	handlePostFile(file);
 	var annotations = [{
-		"type": "net.app.core.oembed",
+		"type": "io.pnut.core.oembed",
 		"value": {
-			"+net.app.core.file": {
+			"+io.pnut.core.file": {
 				"format": "oembed",
 				"file_token": file.file_token,
 				"file_id": file.id
 			}
 		}
 	}];
-	$('#PostModal textarea').data('annotations', annotations);
+	$('#PostModal textarea').data('raw', annotations);
 	if(get_setting('urlType') === '1') {
-		$('#PostModal textarea').val('[' + $('#PostModal h3 span').text() + '](https://photos.app.net/{post_id}/1)').keyup();
-		$('#PostModal p span').last().text('{post_id} will be replaced with the correct value when posting.');
+		$('#PostModal textarea').val('[' + $('#PostModal h3 span').text() + '](https://photos.pnut.io/{object_id}/1)').keyup();
+		$('#PostModal p span').last().text('{object_id} will be replaced with the correct value when posting.');
 	}
 }
 
@@ -213,20 +213,20 @@ function multiFile() {
 }
 
 function loaded_file(file, into, tick) {
-	if(!file.url_short) {
-		file.url_short = file.url_permanent || file.url;
+	if(!file.link_short) {
+		file.link_short = file.link;
 	}
 
-	if(get_setting('extension') === '2' || (get_setting('extension') === '1' && file.kind === 'image')) {
-		var name = file.name;
-		var pos = name.lastIndexOf('.');
-		if(pos) {
-			var ext = name.substring(pos);
-			file.url_short += ext;
-		}
-	}
+	// if(get_setting('extension') === '2' || (get_setting('extension') === '1' && file.kind === 'image')) {
+	// 	var name = file.name;
+	// 	var pos = name.lastIndexOf('.');
+	// 	if(pos) {
+	// 		var ext = name.substring(pos);
+	// 		file.link_short += ext;
+	// 	}
+	// }
 
-	var link = $('<a/>').text(file.name).attr('href', file.url_short);
+	var link = $('<a/>').text(file.name).attr('href', file.link_short);
 	var buttons = [
 		$('<div class="btn-group" />').append(
 			$('<button type="button" data-toggle="button" />')
@@ -257,12 +257,8 @@ function uploadButton(e) {
 
 function build_post(text, annotations) {
 	var post = {
-		annotations: annotations,
-		text: text,
-		entities: {
-			parse_links: true,
-			parse_markdown_links: true
-		}
+		raw: annotations,
+		text: text
 	};
 
 	return post;
@@ -317,7 +313,7 @@ function niceSize(bytes) {
 function updateUser(callback) {
 	$.appnet.token.get().done(function(data) {
 		if(data.meta.code !== 200) {
-			alert("Error talking to App.net!");
+			alert("Error talking to Pnut!");
 			logout();
 			console.log(data);
 		} else {
@@ -330,7 +326,7 @@ function updateUser(callback) {
 			}
 		}
 	}).fail(function() {
-		alert("Error talking to App.net!");
+		alert("Error talking to Pnut!");
 		logout();
 		console.log(arguments);
 	});
@@ -344,8 +340,8 @@ function updateConfig() {
 			setTimeout(updateConfig, 300000);
 		} else {
 			data = data.data;
-			set_setting('post_length', data.post.text_max_length);
-			set_setting('post_id_length', data.text.uri_template_length.post_id);
+			set_setting('post_length', data.post.max_length);
+			set_setting('post_id_length', 6); // was data.text.uri_template_length.post_id
 			// Try again in a day
 			setTimeout(updateConfig, 86400000);
 		}
@@ -359,7 +355,7 @@ function updateConfig() {
 function setupUser() {
 	$('#Username').text(config.data.user.name + ' (@' + config.data.user.username + ')');
 	$('#AvailableSpace').text(niceSize(config.data.storage.available));
-	config['max_size'] = Math.min(config.data.limits.max_file_size, config.data.storage.available);
+	config['max_size'] = Math.min(104857600, config.data.storage.available); // was config.data.limits.max_file_size
 	$('#MaxFileSize').text(niceSize(config.max_size));
 }
 
@@ -400,18 +396,20 @@ function showAlert(text, c, expire, before) {
 function setupUploadForm() {
 	$('#UploadForm').fileupload({
 		dataType: 'json',
-		url: 'https://alpha-api.app.net/stream/0/files',
+		url: 'https://api.pnut.io/v0/files',
 		formData: {
-			access_token: config.auth_token,
-			type: "net.puttr.file",
-			public: true
+			// access_token: config.auth_token,
+			type: "pnut.puttr.file",
+			is_public: true
 		},
+		headers: {authorization: 'Bearer ' + config.auth_token},
 		dropZone: $('.dragdropzone'),
 		paramName: 'content',
 		autoUpload: true,
 		limitConcurrentUploads: 5
 	}).bind('fileuploadadd', function (e, data) {
 		var file = data.files[0];
+		console.log(data);
 		if(file.size > config.max_size) {
 			showAlert('That file is too big', 'error');
 			return false;
@@ -459,7 +457,7 @@ function setupPostModal() {
 		var text = $(this).val();
 		text = text.replace(md_regex, '$1');
 		var len = punycode.ucs2.decode(text).length;
-		var post_ids = text.match(/{post_id}/g);
+		var post_ids = text.match(/{object_id}/g);
 		if(post_ids) {
 			len -= (post_ids.length * 9);
 			len += (post_ids.length * get_setting('post_id_length'));

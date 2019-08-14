@@ -2,6 +2,7 @@
 <html>
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="UTF-8">
 	<link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 	<link rel="shortcut icon" href="img/favicon.jpg" type="image/jpeg">
 	<title>Puttr</title>
@@ -60,7 +61,7 @@
 				<p><strong>Puttr</strong> allows you to quickly upload a file and get a URL back, ready for sharing.</p>
 				<a class="btn btn-large btn-success btn-block" id="LoginButton"><i class="icon-off icon-white"></i> Sign up or Log in to Puttr</a>
 				<p>&nbsp;</p>
-				<p class="muted"><small>Puttr uses <a href="https://app.net/" class="muted">App.net</a> for its user accounts and storage. Accounts are free to create and use. Paid accounts are available and increase the file size limit and total amount of space available.</small></p>
+				<p class="muted"><small>Puttr uses <a href="https://pnut.io" class="muted">Pnut</a> for its user accounts and storage. Accounts are free to create and use. Paid accounts are available and increase the file size limit and total amount of space available.</small></p>
 			</div>
 		</div>
 		<div id="HaveAuth" class="hide">
@@ -100,7 +101,7 @@
 				<div class="row-fluid clearfix"><p>&nbsp;</p></div>
 				<div class="row-fluid">
 					<div class="span10 offset1" id="MultiFile">
-						<button type="button" disabled class="btn btn-block btn-success"><i class="icon-share icon-white"></i> Post <span>0 files</span> to ADN</button>
+						<button type="button" disabled class="btn btn-block btn-success"><i class="icon-share icon-white"></i> Post <span>0 files</span> to Pnut</button>
 					</div>
 				</div>
 				<div class="row-fluid">
@@ -127,7 +128,7 @@
 			<div id="PostModal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-					<h3>Posting "<span></span>" to ADN</h3>
+					<h3>Posting "<span></span>" to Pnut</h3>
 				</div>
 				<div class="modal-body">
 					<textarea id="PostData"></textarea>
@@ -152,8 +153,8 @@
 						<div class="controls">
 							<div class="btn-group" data-toggle="buttons-radio">
 								<button name="extension" type="button" class="btn" data-value="0">No</button>
-								<button name="extension" type="button" class="btn" data-value="1">Images only</button>
-								<button name="extension" type="button" class="btn" data-value="2">Always</button>
+								<button name="extension" type="button" class="btn" data-value="1" disabled>Images only</button>
+								<button name="extension" type="button" class="btn" data-value="2" disabled>Always</button>
 							</div>
 							<span class="help-inline">Change only effects newly loaded items.</span>
 						</div>
@@ -165,10 +166,10 @@
 						<label class="control-label">URL to use when posting</label>
 						<div class="controls">
 							<div class="btn-group" data-toggle="buttons-radio">
-								<button name="urlType" type="button" class="btn" data-value="0">files.app.net</button>
-								<button name="urlType" type="button" class="btn" data-value="1">photos.app.net</button>
+								<button name="urlType" type="button" class="btn" data-value="0">files.pnut.io</button>
+								<button name="urlType" type="button" class="btn" data-value="1" disabled>photos.pnut.io</button>
 							</div>
-							<span class="help-inline">Only images will use photos.app.net URLs</span>
+							<span class="help-inline">Only images will use photos.pnut.io URLs</span>
 						</div>
 						<label class="control-label">Auto-select new files</label>
 						<div class="controls">
@@ -186,7 +187,7 @@
 			</div>
 		</div>
 		<p>&nbsp;</p>
-		<p class="text-center"><a href="privacy.html">Privacy&nbsp;Policy</a>&nbsp;|&nbsp;<a href="terms.html">Terms&nbsp;of&nbsp;Service</a>&nbsp;|&nbsp;<a href="https://app.net/simon_w" rel="me" target="_blank">Follow&nbsp;me&nbsp;on&nbsp;App.net</a></p>
+		<!-- <p class="text-center"><a href="privacy.html">Privacy&nbsp;Policy</a>&nbsp;|&nbsp;<a href="terms.html">Terms&nbsp;of&nbsp;Service</a>&nbsp;|&nbsp;<a href="https://pnut.io/@33mhz" target="_blank">Follow&nbsp;me&nbsp;on&nbsp;Pnut</a></p> -->
 	</div>
 	<script type="text/javascript" src="js/jquery.min.js?d=203"></script>
 	<script type="text/javascript" src="js/bootstrap.min.js?d=0"></script>

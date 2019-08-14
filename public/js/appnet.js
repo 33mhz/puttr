@@ -164,8 +164,7 @@ if (typeof module !== 'undefined')
         "public_messages": "Send and receive public messages as this user",
         "messages": "Send and receive public and private messages as this user",
         "update_profile": "Update a user's name, images, and other profile information",
-        "files": "Manage a user's files. This is not needed for uploading files.",
-        "export": "Bulk export all of this user's App.net data. This is intended only for backup services, not day-to-day App.net client use. Users will be shown an extra warning when this scope is requested due to the sensitivity of this data."
+        "files": "Manage a user's files. This is not needed for uploading files."
     },
     "stream_types": [
         "user",
@@ -232,7 +231,7 @@ if (typeof module !== 'undefined')
         "message_ids": [ "ids" ],
         "file_ids":    [ "ids" ]
     },
-    "base": "https://alpha-api.app.net/stream/0/",
+    "base": "https://api.pnut.io/v0/",
     "endpoints": [
         {
             "id": "100",
@@ -2097,7 +2096,7 @@ if (typeof module !== 'undefined')
         "get_params": [],
             "method": "GET",
             "url": [
-                "config/"
+                "sys/config"
             ],
             "token": "None",
             "scope": "basic",
