@@ -39,7 +39,7 @@
 		}
 
 		#PostModal textarea {
-			width: 516px;
+			width: 100%;
 			height: 100px;
 			color: #000;
 		}
@@ -149,15 +149,6 @@
 				</div>
 				<div class="modal-body">
 					<form class="form-horizontal">
-						<label class="control-label">Include file extensions?</label>
-						<div class="controls">
-							<div class="btn-group" data-toggle="buttons-radio">
-								<button name="extension" type="button" class="btn" data-value="0">No</button>
-								<button name="extension" type="button" class="btn" data-value="1" disabled>Images only</button>
-								<button name="extension" type="button" class="btn" data-value="2" disabled>Always</button>
-							</div>
-							<span class="help-inline">Change only effects newly loaded items.</span>
-						</div>
 						<label class="control-label" for="NumLoadPref">Number of files to load</label>
 						<div class="controls">
 							<input name="numload" class="input-mini" type="number" id="NumLoadPref" min=3 max=200 step=1 required />
