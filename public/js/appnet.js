@@ -231,7 +231,7 @@ if (typeof module !== 'undefined')
         "message_ids": [ "ids" ],
         "file_ids":    [ "ids" ]
     },
-    "base": "https://api.pnut.io/v0/",
+    "base": "https://api.pnut.io/v1/",
     "endpoints": [
         {
             "id": "100",

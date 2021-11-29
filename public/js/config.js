@@ -123,7 +123,7 @@ function handlePostMulti() {
 	if($('.toggleButton.active').length === 0) {
 		return;
 	}
-	var annotations = [], msgs = [], images = 1;
+	var annotations = {}, msgs = [], images = 1;
 	$('.toggleButton.active').each(function() {
 		var file = $(this).data('file'), url;
 		file = jQuery.extend(true, {}, file);
@@ -133,24 +133,24 @@ function handlePostMulti() {
 			name = name.substring(0, pos);
 		}
 		if(file.kind === "image") {
-			// if(get_setting('urlType') === '1') {
-			// 	url = 'https://photos.pnut.io/{object_id}/' + images;
-			// 	images++;
-			// } else {
-				url = file.link_short;
-			// }
-			annotations.push({
-				"type": "io.pnut.core.oembed",
-				"value": {
-					"+io.pnut.core.file": {
-						"format": "oembed",
-						"file_token": file.file_token,
-						"file_id": file.id
-					}
+			if(get_setting('urlType') === '1') {
+				url = 'https://photos.pnut.io/{object_id}/' + images;
+				images++;
+			} else {
+				url = file.url_short;
+			}
+			if (typeof annotations["io.pnut.core.oembed"] === "undefined") {
+				annotations["io.pnut.core.oembed"] = []
+			}
+			annotations["io.pnut.core.oembed"].push({
+				"+io.pnut.core.file": {
+					"format": "oembed",
+					"file_token": file.file_token,
+					"file_id": file.id
 				}
 			});
 		} else {
-			url = file.link_short;
+			url = file.url_short;
 		}
 		msgs.push('[' + name + '](' + url + ')')
 	});
@@ -171,7 +171,7 @@ function handlePostFile(file) {
 		name = name.substring(0, pos);
 	}
 	$('#PostModal h3 span').text(name);
-	$('#PostModal textarea').data('raw', []).val('[' + name + '](' + file.link_short + ')').keyup();
+	$('#PostModal textarea').data('raw', []).val('[' + name + '](' + file.url_short + ')').keyup();
 	$('#PostModal p span').last().text('');
 }
 
@@ -189,10 +189,10 @@ function handlePostImage(file) {
 		}
 	}];
 	$('#PostModal textarea').data('raw', annotations);
-	// if(get_setting('urlType') === '1') {
-		// $('#PostModal textarea').val('[' + $('#PostModal h3 span').text() + '](https://photos.pnut.io/{object_id}/1)').keyup();
-		// $('#PostModal p span').last().text('{object_id} will be replaced with the correct value when posting.');
-	// }
+	if(get_setting('urlType') === '1') {
+		$('#PostModal textarea').val('[' + $('#PostModal h3 span').text() + '](https://photos.pnut.io/{object_id}/1)').keyup();
+		$('#PostModal p span').last().text('{object_id} will be replaced with the correct value when posting.');
+	}
 }
 
 function multiFile() {
@@ -212,11 +212,11 @@ function multiFile() {
 }
 
 function loaded_file(file, into, tick) {
-	if(!file.link_short) {
-		file.link_short = file.link;
+	if(!file.url_short) {
+		file.url_short = file.url;
 	}
 
-	var link = $('<a/>').text(file.name).attr('href', file.link_short);
+	var link = $('<a/>').text(file.name).attr('href', file.url_short).attr('title', file.name);
 	var buttons = [
 		$('<div class="btn-group" />').append(
 			$('<button type="button" data-toggle="button" />')
@@ -386,7 +386,7 @@ function showAlert(text, c, expire, before) {
 function setupUploadForm() {
 	$('#UploadForm').fileupload({
 		dataType: 'json',
-		url: 'https://api.pnut.io/v0/files',
+		url: 'https://api.pnut.io/v1/files',
 		formData: {
 			type: "pnut.puttr.file",
 			is_public: true
@@ -398,7 +398,7 @@ function setupUploadForm() {
 		limitConcurrentUploads: 5
 	}).bind('fileuploadadd', function (e, data) {
 		var file = data.files[0];
-		console.log(data);
+
 		if(file.size > config.max_size) {
 			showAlert('That file is too big', 'error');
 			return false;
